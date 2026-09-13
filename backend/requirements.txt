@@ -1,0 +1,22 @@
+# Web Framework and Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+sse-starlette>=2.2.0
+
+# Asynchronous Database & ORM
+sqlalchemy>=2.0.36
+asyncpg>=0.30.0
+
+# Agent Orchestration & Checkpointing
+langgraph>=0.2.68
+langgraph-checkpoint-postgres>=2.0.12
+
+# AI / LLM Integration
+langchain-google-genai>=2.0.8
+google-genai>=1.2.0
+
+# Data Validation & Utilities (allow latest Python 3.14 supported builds)
+pydantic>=2.13.0
+pydantic-settings>=2.7.0
+python-dotenv>=1.0.1
+httpx>=0.28.0
