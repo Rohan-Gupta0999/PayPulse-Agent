@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.agent_routes import router as agent_router
+from app.api.merchant_routes import router as merchant_router
 
 app = FastAPI(
     title="PayPulse AI Merchant Operations Agent",
@@ -8,7 +9,6 @@ app = FastAPI(
     description="Stateful agentic backend with human-in-the-loop approval and WhatsApp dispatch"
 )
 
-# Enable CORS so your teammate's Next.js frontend (localhost:3000) can communicate seamlessly
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "*"],
@@ -17,8 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include the agent endpoints
 app.include_router(agent_router, prefix="/api")
+app.include_router(merchant_router, prefix="/api")
 
 
 @app.get("/")
@@ -28,4 +28,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, loop="asyncio")
