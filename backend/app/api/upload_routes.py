@@ -1,7 +1,7 @@
 import csv
 import io
-from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from datetime import datetime, timezone, timedelta
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from sqlalchemy import text
 from app.database.session import AsyncSessionLocal
 
@@ -9,22 +9,21 @@ router = APIRouter(prefix="/upload", tags=["CSV Upload"])
 
 # Thresholds for flagging a customer as churned and worth a win-back campaign
 CHURN_DAYS = 30
-CHURN_SPEND = 10000.0
+CHURN_SPEND = 3000.0
 
 
 @router.post("/ledger/{merchant_id}")
-async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
+async def upload_ledger(
+    merchant_id: int,
+    file: UploadFile = File(...),
+    weekly_capital: float = Form(0.0),   # Merchant's procurement cost for the week
+):
     """
     Accepts a weekly POS export CSV with columns:
-      Phone Number | Name | Total Spend | Last Visit Date
+      Phone Number | Name | Total Spend (or Total Weekly Spend) | Last Visit Date
 
-    Steps:
-    1. Validates and parses the CSV
-    2. Upserts each row into the customers table (keyed by phone + merchant)
-    3. Runs a churn diff — finds high-value customers above CHURN_DAYS threshold
-       who have NOT already been contacted in the last 30 days
-    4. Returns graph data (6-month aggregates) + the list of churned customers
-       so the frontend can redraw charts and fire the agent immediately
+    Also accepts weekly_capital (float) as a form field alongside the file.
+    Returns real KPI data: total_sales, profit, regular_customers, at_risk_customers.
     """
     if not (file.filename or "").endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are accepted.")
@@ -41,12 +40,22 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
     if not reader.fieldnames:
         raise HTTPException(status_code=422, detail="Empty or invalid CSV file.")
 
-    required = {"Phone Number", "Name", "Total Spend", "Last Visit Date"}
-    missing = required - set(reader.fieldnames)
-    if missing:
+    fields = set(reader.fieldnames)
+
+    # Accept either "Total Spend" or "Total Weekly Spend"
+    spend_col = (
+        "Total Spend" if "Total Spend" in fields
+        else "Total Weekly Spend" if "Total Weekly Spend" in fields
+        else None
+    )
+
+    required = {"Phone Number", "Name", "Last Visit Date"}
+    missing = required - fields
+    if missing or spend_col is None:
+        all_missing = missing | ({"Total Spend"} if spend_col is None else set())
         raise HTTPException(
             status_code=422,
-            detail=f"Missing columns: {', '.join(missing)}. Required: Phone Number, Name, Total Spend, Last Visit Date"
+            detail=f"Missing columns: {', '.join(all_missing)}. Required: Phone Number, Name, Total Spend (or Total Weekly Spend), Last Visit Date"
         )
 
     rows = list(reader)
@@ -57,17 +66,24 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
     updated = 0
     churned: list[dict] = []
 
+    # KPI accumulators — computed from the CSV rows directly
+    total_sales = 0.0
+    regular_count = 0
+    at_risk_count = 0
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=CHURN_DAYS)
+
     async with AsyncSessionLocal() as session:
         for row in rows:
             phone = row.get("Phone Number", "").strip()
             name = row.get("Name", "").strip()
             if not phone or not name:
-                continue  # Skip blank rows silently
+                continue
 
-            # Clean ₹ and commas from spend values (common in Indian POS exports)
+            # Clean ₹ and commas (common in Indian POS exports)
             try:
                 spend = float(
-                    str(row.get("Total Spend", "0"))
+                    str(row.get(spend_col, "0"))
                     .replace("₹", "")
                     .replace(",", "")
                     .strip()
@@ -85,14 +101,18 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
                 except ValueError:
                     continue
             if last_visit is None:
-                continue  # Skip rows with unparseable dates
+                continue
 
-            # --- SELECT then UPDATE-or-INSERT (no unique constraint needed) ---
+            # Accumulate KPIs
+            total_sales += spend
+            if last_visit >= cutoff:
+                regular_count += 1
+            else:
+                at_risk_count += 1
+
+            # SELECT → UPDATE or INSERT
             lookup = await session.execute(
-                text(
-                    "SELECT id FROM customers "
-                    "WHERE phone_number = :phone AND merchant_id = :mid"
-                ),
+                text("SELECT id FROM customers WHERE phone_number = :phone AND merchant_id = :mid"),
                 {"phone": phone, "mid": merchant_id},
             )
             existing = lookup.fetchone()
@@ -116,19 +136,13 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
                         VALUES (:mid, :name, :phone, :spend, :visited)
                         RETURNING id
                     """),
-                    {
-                        "mid": merchant_id,
-                        "name": name,
-                        "phone": phone,
-                        "spend": spend,
-                        "visited": last_visit,
-                    },
+                    {"mid": merchant_id, "name": name, "phone": phone, "spend": spend, "visited": last_visit},
                 )
                 cid = ins.scalar_one()
                 inserted += 1
 
-            # --- CHURN DIFF: flag only if above threshold AND not recently contacted ---
-            days_away = (datetime.now(timezone.utc) - last_visit).days
+            # CHURN DIFF
+            days_away = (now - last_visit).days
             if days_away >= CHURN_DAYS and spend >= CHURN_SPEND:
                 recent_camp = await session.execute(
                     text("""
@@ -152,7 +166,7 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
 
         await session.commit()
 
-        # --- GRAPH DATA: 6-month aggregates from freshly upserted data ---
+        # 6-month graph data from freshly upserted data
         g = await session.execute(
             text("""
                 SELECT
@@ -175,6 +189,8 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
         "sales": [float(r.sales) for r in graph_rows],
     }
 
+    profit = total_sales - weekly_capital
+
     return {
         "status": "SUCCESS",
         "summary": {
@@ -183,7 +199,14 @@ async def upload_ledger(merchant_id: int, file: UploadFile = File(...)):
             "updated": updated,
             "churned_flagged": len(churned),
         },
-        # Sorted by most days away first — most urgent customer is index 0
+        # Live KPIs — computed from the uploaded CSV data
+        "kpis": {
+            "total_sales": round(total_sales, 2),
+            "profit": round(profit, 2),
+            "weekly_capital": round(weekly_capital, 2),
+            "regular_customers": regular_count,
+            "at_risk_customers": at_risk_count,
+        },
         "churned_customers": sorted(churned, key=lambda x: x["days_away"], reverse=True),
         "graph_data": graph_data,
     }

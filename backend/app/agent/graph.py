@@ -43,7 +43,7 @@ async def strategist_node(state: dict):
     customer_name = target.get("name", "Customer")
 
     # Dynamic fallback defaults based on merchant business rules
-    discount = 20.0 if (spend >= 20000 or days >= 60) else 15.0
+    discount = 20.0 if (spend >= 3500 or days >= 60) else 15.0
     coupon = f"COMEBACK{int(discount)}"
 
     try:

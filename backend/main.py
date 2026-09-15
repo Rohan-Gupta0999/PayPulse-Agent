@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.agent_routes import router as agent_router
 from app.api.merchant_routes import router as merchant_router
+from app.api.upload_routes import router as upload_router
 
 app = FastAPI(
     title="PayPulse AI Merchant Operations Agent",
@@ -19,6 +20,7 @@ app.add_middleware(
 
 app.include_router(agent_router, prefix="/api")
 app.include_router(merchant_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
 
 
 @app.get("/")

@@ -2,7 +2,8 @@ import json
 import uuid
 import asyncio
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 from sqlalchemy import text
@@ -16,40 +17,60 @@ class ApprovalRequest(BaseModel):
     action: str
 
 @router.get("/stream/{merchant_id}")
-async def stream_agent_execution(merchant_id: int):
+async def stream_agent_execution(
+    merchant_id: int,
+    customer_id: Optional[int] = Query(None, description="Specific customer to process. If omitted, picks a random churned customer.")
+):
     thread_id = f"session_{merchant_id}_{uuid.uuid4().hex[:6]}"
     config = {"configurable": {"thread_id": thread_id}}
 
     # 1. DEFAULT FALLBACK VALUES
     db_customer_id = 1
     db_customer_name = "Customer"
+    db_phone_number = "+919999999999"
     days_away = 45
     total_spend = 12000.0
 
-    # 2. ATTEMPT TO FETCH REAL CUSTOMER FROM DB
+    # 2. FETCH CUSTOMER FROM DB
+    # If customer_id was passed by the upload route → use that exact customer
+    # Otherwise → pick a random churned customer (used for testing)
     try:
         async with AsyncSessionLocal() as session:
-            result = await session.execute(
-                text("""
-                    SELECT id, name, total_spend, 
-                           EXTRACT(DAY FROM (NOW() - last_visited_at)) AS days_away
-                    FROM customers 
-                    WHERE merchant_id = :mid
-                    ORDER BY RANDOM() 
-                    LIMIT 1
-                """),
-                {"mid": merchant_id}
-            )
+            if customer_id:
+                # Autonomous path: upload route identified this churned customer
+                result = await session.execute(
+                    text("""
+                        SELECT id, name, phone_number, total_spend,
+                               EXTRACT(DAY FROM (NOW() - last_visited_at)) AS days_away
+                        FROM customers
+                        WHERE id = :cid AND merchant_id = :mid
+                    """),
+                    {"cid": customer_id, "mid": merchant_id}
+                )
+            else:
+                # Manual / test path: pick a random customer
+                result = await session.execute(
+                    text("""
+                        SELECT id, name, phone_number, total_spend,
+                               EXTRACT(DAY FROM (NOW() - last_visited_at)) AS days_away
+                        FROM customers
+                        WHERE merchant_id = :mid
+                        ORDER BY RANDOM()
+                        LIMIT 1
+                    """),
+                    {"mid": merchant_id}
+                )
             row = result.fetchone()
             if row:
                 db_customer_id = row.id
                 db_customer_name = row.name
+                db_phone_number = row.phone_number or db_phone_number
                 total_spend = float(row.total_spend) if row.total_spend else 12000.0
                 days_away = int(row.days_away) if row.days_away else 45
     except Exception as e:
         print(f"⚠️ Could not fetch from DB, using fallback: {e}")
 
-    discount_pct = 20.0 if (total_spend >= 20000 or days_away >= 60) else 15.0
+    discount_pct = 20.0 if (total_spend >= 3500 or days_away >= 60) else 15.0
     coupon = f"COMEBACK{int(discount_pct)}"
 
     initial_state = {
@@ -58,15 +79,17 @@ async def stream_agent_execution(merchant_id: int):
         "anomaly_detected": False,
         "drop_percentage": 0.0,
         "target_customer": {
-            "id": db_customer_id, 
-            "name": db_customer_name, 
-            "lifetime_spend": total_spend, 
+            "id": db_customer_id,
+            "name": db_customer_name,
+            "phone_number": db_phone_number,
+            "lifetime_spend": total_spend,
             "days_away": days_away
         },
         "generated_offer": {"discount_percentage": discount_pct, "coupon_code": coupon},
         "approval_status": None,
         "execution_result": None,
     }
+
 
     async def event_generator():
         # Step 1: Start UI Stream (Searching Database...)

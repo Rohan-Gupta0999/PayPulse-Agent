@@ -32,14 +32,57 @@ async def get_merchant_stats(merchant_id: int):
             decided = approved + (stats.rejected_count or 0)
             success_rate = round((approved / decided * 100), 1) if decided > 0 else 0.0
 
+            # Real Customer & Sales metrics
+            cust_res = await session.execute(
+                text("""
+                    SELECT
+                        COUNT(*) AS total_customers,
+                        COALESCE(SUM(total_spend), 0) AS total_sales,
+                        COUNT(CASE WHEN last_visited_at >= NOW() - INTERVAL '30 days' THEN 1 END) AS regular_customers,
+                        COUNT(CASE WHEN last_visited_at < NOW() - INTERVAL '30 days' THEN 1 END) AS at_risk_customers
+                    FROM customers
+                    WHERE merchant_id = :mid
+                """),
+                {"mid": merchant_id}
+            )
+            c_row = cust_res.fetchone()
+
+            # Real 6-month graph data
+            g = await session.execute(
+                text("""
+                    SELECT
+                        TO_CHAR(DATE_TRUNC('month', last_visited_at), 'Mon') AS month,
+                        COUNT(*) AS visits,
+                        SUM(total_spend) AS sales
+                    FROM customers
+                    WHERE merchant_id = :mid
+                      AND last_visited_at >= NOW() - INTERVAL '6 months'
+                    GROUP BY DATE_TRUNC('month', last_visited_at)
+                    ORDER BY DATE_TRUNC('month', last_visited_at)
+                """),
+                {"mid": merchant_id},
+            )
+            graph_rows = g.fetchall()
+
+            graph_data = {
+                "months": [r.month for r in graph_rows],
+                "visits": [int(r.visits) for r in graph_rows],
+                "sales": [float(r.sales) for r in graph_rows],
+            }
+
             return {
                 "merchant_id": merchant_id,
                 "metrics": {
                     "total_interventions": total,
                     "active_pending": stats.pending_count or 0,
                     "approved_campaigns": approved,
-                    "success_rate_percentage": success_rate
-                }
+                    "success_rate_percentage": success_rate,
+                    "total_customers": c_row.total_customers if c_row else 0,
+                    "total_sales": float(c_row.total_sales) if c_row else 0.0,
+                    "regular_customers": c_row.regular_customers if c_row else 0,
+                    "at_risk_customers": c_row.at_risk_customers if c_row else 0,
+                },
+                "graph_data": graph_data
             }
         
     except Exception as e:
