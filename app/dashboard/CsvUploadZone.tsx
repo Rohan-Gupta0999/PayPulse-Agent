@@ -148,12 +148,12 @@ export default function CsvUploadZone({
         <>
           <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
           <p className="text-base font-bold text-emerald-700">{t.uploadSuccess}</p>
-          {/* Only show Customers + Need Outreach — no "Updated" clutter */}
+          {/* Only show Visiting Customers + Need Outreach — perfectly matched with upper metrics */}
           <div className="flex justify-center gap-12 mt-4">
             <div className="text-center">
-              <span className="text-2xl font-black text-slate-800">{summary.total_rows}</span>
+              <span className="text-2xl font-black text-slate-800">{summary.total_customers ?? summary.total_rows}</span>
               <p className="text-[10px] text-slate-500 uppercase font-bold mt-0.5">
-                {lang === "EN" ? "Customers" : "ग्राहक"}
+                {lang === "EN" ? "Visiting Customers" : "आए ग्राहक"}
               </p>
             </div>
             <div className="text-center">

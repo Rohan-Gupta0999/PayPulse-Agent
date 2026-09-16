@@ -7,13 +7,16 @@ router = APIRouter(prefix="/merchant", tags=["Merchant Metrics"])
 @router.get("/{merchant_id}/stats")
 async def get_merchant_stats(merchant_id: int):
     """
-    Aggregates campaign data to populate the frontend KPI dashboard cards.
+    Aggregates campaign + customer data for the frontend KPI dashboard.
+    Also returns weekly_graph_data from weekly_snapshots so the charts
+    render correctly after a page refresh (without requiring a new upload).
     """
     try:
         async with AsyncSessionLocal() as session:
+            # ── Campaign counts ───────────────────────────────────────────────
             result = await session.execute(
                 text("""
-                    SELECT 
+                    SELECT
                         COUNT(*) as total_interventions,
                         COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as approved_count,
                         COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as rejected_count,
@@ -27,12 +30,10 @@ async def get_merchant_stats(merchant_id: int):
 
             total = stats.total_interventions or 0
             approved = stats.approved_count or 0
-            
-            # Calculate Success Rate (Approved / Total decided)
             decided = approved + (stats.rejected_count or 0)
             success_rate = round((approved / decided * 100), 1) if decided > 0 else 0.0
 
-            # Real Customer & Sales metrics
+            # ── Customer live metrics ─────────────────────────────────────────
             cust_res = await session.execute(
                 text("""
                     SELECT
@@ -47,31 +48,62 @@ async def get_merchant_stats(merchant_id: int):
             )
             c_row = cust_res.fetchone()
 
-            # Real 6-month graph data
-            g = await session.execute(
-                text("""
-                    SELECT
-                        TO_CHAR(DATE_TRUNC('month', last_visited_at), 'Mon') AS month,
-                        COUNT(*) AS visits,
-                        SUM(total_spend) AS sales
-                    FROM customers
-                    WHERE merchant_id = :mid
-                      AND last_visited_at >= NOW() - INTERVAL '6 months'
-                    GROUP BY DATE_TRUNC('month', last_visited_at)
-                    ORDER BY DATE_TRUNC('month', last_visited_at)
-                """),
-                {"mid": merchant_id},
-            )
-            graph_rows = g.fetchall()
+            # ── Latest weekly snapshot (for KPI cards on refresh) ─────────────
+            latest_kpis = None
+            weekly_graph_data = {"weeks": [], "sales": [], "visits": [], "regular": [], "at_risk": [], "profit": []}
 
-            graph_data = {
-                "months": [r.month for r in graph_rows],
-                "visits": [int(r.visits) for r in graph_rows],
-                "sales": [float(r.sales) for r in graph_rows],
-            }
+            try:
+                snap_latest = await session.execute(
+                    text("""
+                        SELECT week_label, total_sales, weekly_capital, profit,
+                               total_customers, regular_customers, at_risk_customers
+                        FROM weekly_snapshots
+                        WHERE merchant_id = :mid
+                        ORDER BY week_start_date DESC
+                        LIMIT 1
+                    """),
+                    {"mid": merchant_id}
+                )
+                latest_row = snap_latest.fetchone()
+                if latest_row:
+                    latest_kpis = {
+                        "total_sales": float(latest_row.total_sales),
+                        "weekly_capital": float(latest_row.weekly_capital),
+                        "profit": float(latest_row.profit),
+                        "regular_customers": int(latest_row.regular_customers),
+                        "at_risk_customers": int(latest_row.at_risk_customers),
+                    }
+
+                # ── Weekly graph history ──────────────────────────────────────
+                snap_all = await session.execute(
+                    text("""
+                        SELECT week_label, total_sales, total_customers,
+                               regular_customers, at_risk_customers, profit
+                        FROM weekly_snapshots
+                        WHERE merchant_id = :mid
+                        ORDER BY week_start_date
+                        LIMIT 8
+                    """),
+                    {"mid": merchant_id}
+                )
+                snap_rows = snap_all.fetchall()
+                weekly_graph_data = {
+                    "weeks":   [r.week_label for r in snap_rows],
+                    "sales":   [float(r.total_sales) for r in snap_rows],
+                    "visits":  [int(r.total_customers) for r in snap_rows],
+                    "regular": [int(r.regular_customers) for r in snap_rows],
+                    "at_risk": [int(r.at_risk_customers) for r in snap_rows],
+                    "profit":  [float(r.profit) for r in snap_rows],
+                }
+            except Exception:
+                # weekly_snapshots table might not exist yet (first ever load)
+                pass
 
             return {
                 "merchant_id": merchant_id,
+                "has_data": latest_kpis is not None,
+                "latest_kpis": latest_kpis,
+                "weekly_graph_data": weekly_graph_data,
                 "metrics": {
                     "total_interventions": total,
                     "active_pending": stats.pending_count or 0,
@@ -82,11 +114,11 @@ async def get_merchant_stats(merchant_id: int):
                     "regular_customers": c_row.regular_customers if c_row else 0,
                     "at_risk_customers": c_row.at_risk_customers if c_row else 0,
                 },
-                "graph_data": graph_data
             }
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch merchant stats: {str(e)}")
+
 
 @router.get("/{merchant_id}/campaigns")
 async def get_merchant_campaigns(merchant_id: int):

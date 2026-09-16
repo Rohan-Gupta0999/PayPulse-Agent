@@ -221,3 +221,86 @@ async def approve_and_dispatch(request: ApprovalRequest):
         raise HTTPException(status_code=500, detail=f"Failed to save campaign: {str(e)}")
 
     return {"status": "SUCCESS", "thread_id": request.thread_id}
+
+
+# ─── BULK APPROVAL ─────────────────────────────────────────────────────────────
+
+from typing import List
+
+class BulkApproveRequest(BaseModel):
+    merchant_id: int
+    campaign_ids: List[int]
+    action: str = "APPROVED"   # "APPROVED" | "REJECTED"
+
+
+@router.post("/bulk-approve")
+async def bulk_approve_campaigns(request: BulkApproveRequest):
+    """
+    Approve (or reject) multiple campaigns in a single click.
+    Called when the merchant presses "Send Offers to All X Customers".
+    """
+    if not request.campaign_ids:
+        raise HTTPException(status_code=400, detail="No campaign IDs provided.")
+
+    updated = 0
+    try:
+        async with AsyncSessionLocal() as session:
+            for cid in request.campaign_ids:
+                result = await session.execute(
+                    text("""
+                        UPDATE campaigns
+                        SET status = :action
+                        WHERE id = :cid AND merchant_id = :mid
+                        RETURNING id
+                    """),
+                    {"action": request.action, "cid": cid, "mid": request.merchant_id}
+                )
+                if result.rowcount:
+                    updated += 1
+            await session.commit()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bulk approve failed: {str(e)}")
+
+    return {"status": "OK", "action": request.action, "updated": updated}
+
+
+@router.get("/pending/{merchant_id}")
+async def get_pending_campaigns(merchant_id: int):
+    """
+    Returns all PENDING_APPROVAL campaigns with customer details.
+    Used to restore the outreach queue after a page refresh.
+    """
+    try:
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(
+                text("""
+                    SELECT c.id AS campaign_id, c.thread_id, c.discount_percentage, c.coupon_code,
+                           cust.id AS customer_id, cust.name, cust.phone_number, cust.total_spend,
+                           EXTRACT(DAY FROM (NOW() - cust.last_visited_at))::int AS days_away
+                    FROM campaigns c
+                    JOIN customers cust ON c.customer_id = cust.id
+                    WHERE c.merchant_id = :mid AND c.status = 'PENDING_APPROVAL'
+                    ORDER BY cust.last_visited_at ASC
+                """),
+                {"mid": merchant_id}
+            )
+            rows = result.fetchall()
+
+        pending = [
+            {
+                "id": r.customer_id,
+                "name": r.name,
+                "phone_number": r.phone_number,
+                "total_spend": float(r.total_spend),
+                "days_away": r.days_away or 0,
+                "campaign_id": r.campaign_id,
+                "thread_id": r.thread_id,
+                "discount": float(r.discount_percentage),
+                "coupon": r.coupon_code,
+            }
+            for r in rows
+        ]
+        return {"pending_customers": pending}
+    except Exception as e:
+        # If campaigns table doesn't exist yet, return empty
+        return {"pending_customers": []}
