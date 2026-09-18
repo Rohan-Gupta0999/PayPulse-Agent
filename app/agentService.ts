@@ -226,16 +226,21 @@ export async function fetchPendingCampaigns(merchantId: number): Promise<Churned
  * Fetches previously uploaded weekly snapshots and KPI stats.
  * Allows merchant to view historical weekly bar graphs immediately upon login.
  */
-export async function fetchMerchantStats(merchantId: number): Promise<{
-  has_data: boolean;
-  latest_kpis: KpiData | null;
-  weekly_graph_data: WeeklyGraphData;
+export async function fetchMerchantStats(merchantId: number = 1): Promise<{
   weeks_breakdown: WeekBreakdown[];
-  current_week_id?: string;
-}> {
-  const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/stats`);
-  if (!response.ok) throw new Error("Failed to fetch merchant stats");
-  return await response.json();
+  current_kpis?: KpiData;
+} | null> {
+  try {
+    const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/stats`);
+    if (!response.ok) {
+      console.warn(`Merchant stats endpoint returned status ${response.status}`);
+      return { weeks_breakdown: [] };
+    }
+    return await response.json();
+  } catch (error) {
+    console.warn("Could not connect to merchant stats API:", error);
+    return { weeks_breakdown: [] };
+  }
 }
 
 // ─── WhatsApp Welcome Greetings ──────────────────────────────────────────────
@@ -255,13 +260,26 @@ export async function sendWelcomeMessage(
 
 export async function sendBulkWelcomeMessages(
   merchantId: number,
-  customers: Array<{ customer_id?: number; customer_name: string; phone_number: string; amount_spent: number }>
-): Promise<{ status: string; count: number; results: any[] }> {
-  const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/send-welcome-bulk`, {
+  customers: Array<{
+    customer_id?: number;
+    customer_name: string;
+    phone_number: string;
+    amount_spent?: number;
+  }>,
+  testPhone?: string
+) {
+  const res = await fetch("http://localhost:8000/api/agent/welcome-bulk", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ customers }),
+    body: JSON.stringify({
+      merchant_id: merchantId,
+      customers,
+      test_phone: testPhone || undefined,
+    }),
   });
-  if (!response.ok) throw new Error(`Bulk welcome dispatch failed: ${response.statusText}`);
-  return await response.json();
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to dispatch WhatsApp greetings");
+  }
+  return res.json();
 }

@@ -1,8 +1,13 @@
+import os
+import re
 import json
 import uuid
 import asyncio
+import urllib.parse
 from datetime import datetime, timezone
 from typing import Optional, List
+
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
@@ -10,42 +15,113 @@ from sqlalchemy import text
 
 from app.database.session import AsyncSessionLocal
 from app.agent.graph import agent_app
-from app.api.upload_routes import calculate_spend_based_discount
+
+# ── Update Import to use the margin-safe function ──
+from app.api.upload_routes import calculate_margin_safe_discount
 
 router = APIRouter(prefix="/agent", tags=["Agent"])
 
-
+# ─── Pydantic Models ──────────────────────────────────────────────────────────
 class ApprovalRequest(BaseModel):
     thread_id: str
-    action: str  # "APPROVED" | "REJECTED"
-
+    action: str
 
 class BulkApproveRequest(BaseModel):
     merchant_id: int
     campaign_ids: List[int]
-    action: str = "APPROVED"  # "APPROVED" | "REJECTED"
+    action: str = "APPROVED"
 
+class CustomerItem(BaseModel):
+    customer_id: Optional[int] = None
+    customer_name: str
+    phone_number: str
+    amount_spent: Optional[float] = 0.0
 
+class WelcomeBulkRequest(BaseModel):
+    merchant_id: Optional[int] = 1
+    customers: List[CustomerItem]
+    test_phone: Optional[str] = None
+
+# ─── Helper Functions ─────────────────────────────────────────────────────────
 async def safe_send_whatsapp_offer(phone: str, customer_name: str, discount: float, coupon: str):
-    """Safely triggers WhatsApp dispatch without crashing if credentials or service are offline."""
+    clean_digits = re.sub(r"\D", "", str(phone or ""))
+    if len(clean_digits) == 10: clean_digits = f"91{clean_digits}"
     try:
         from app.services.whatsapp import send_whatsapp_discount_offer
-        await send_whatsapp_discount_offer(
-            recipient_phone=phone,
-            customer_name=customer_name,
-            discount_percentage=discount,
-            coupon_code=coupon
-        )
-    except (ImportError, AttributeError):
-        # Fallback if whatsapp service only has generic message function
-        try:
-            from app.services.whatsapp import send_whatsapp_welcome_message
-            pass
-        except Exception:
-            pass
-    except Exception as e:
-        print(f"⚠️ WhatsApp win-back dispatch notice: {e}")
+        await send_whatsapp_discount_offer(recipient_phone=clean_digits, customer_name=customer_name, discount_percentage=discount, coupon_code=coupon)
+        return
+    except (ImportError, AttributeError): pass
+    except Exception as e: print(f"⚠️ Service dispatch notice: {e}")
 
+    token = os.getenv("WHATSAPP_TOKEN")
+    phone_number_id = os.getenv("PHONE_NUMBER_ID") or os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+    if token and phone_number_id and clean_digits:
+        try:
+            url = f"https://graph.facebook.com/v18.0/{phone_number_id}/messages"
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+            body_text = f"Namaste {customer_name}! 🙏\n\nWe noticed it's been a while since your last visit. We miss you!\n\nHere is an exclusive *{int(discount)}% DISCOUNT* on your next purchase.\nUse coupon code: *{coupon}* at checkout.\n\nValid for the next 7 days. Hope to see you soon!"
+            payload = {"messaging_product": "whatsapp", "recipient_type": "individual", "to": clean_digits, "type": "text", "text": {"preview_url": False, "body": body_text}}
+            async with httpx.AsyncClient() as client:
+                await client.post(url, headers=headers, json=payload, timeout=8.0)
+        except Exception as err:
+            print(f"⚠️ Direct Meta Cloud dispatch notice: {err}")
+
+# ─── Agent Streaming SSE ──────────────────────────────────────────────────────
+@router.get("/stream/{merchant_id}")
+async def stream_agent_execution(
+    merchant_id: int,
+    customer_id: Optional[int] = Query(None)
+):
+    thread_id = f"session_{merchant_id}_{uuid.uuid4().hex[:6]}"
+    config = {"configurable": {"thread_id": thread_id}}
+
+    db_customer_id, db_customer_name, db_phone_number = 1, "Customer", "+919999999999"
+    days_away, total_spend, margin_pct = 45, 12000.0, 25.0
+
+    try:
+        async with AsyncSessionLocal() as session:
+            # 1. Fetch Latest Margin
+            margin_res = await session.execute(
+                text("SELECT profit, total_sales FROM weekly_snapshots WHERE merchant_id = :mid ORDER BY id DESC LIMIT 1"),
+                {"mid": merchant_id}
+            )
+            margin_row = margin_res.fetchone()
+            if margin_row and margin_row.total_sales > 0:
+                margin_pct = (float(margin_row.profit) / float(margin_row.total_sales)) * 100.0
+
+            # 2. Fetch Customer Target
+            if customer_id:
+                result = await session.execute(text("SELECT id, name, phone_number, total_spend, COALESCE(EXTRACT(DAY FROM (NOW() - last_visited_at))::int, 45) AS days_away FROM customers WHERE id = :cid AND merchant_id = :mid"), {"cid": customer_id, "mid": merchant_id})
+            else:
+                result = await session.execute(text("SELECT id, name, phone_number, total_spend, COALESCE(EXTRACT(DAY FROM (NOW() - last_visited_at))::int, 45) AS days_away FROM customers WHERE merchant_id = :mid ORDER BY last_visited_at ASC NULLS LAST LIMIT 1"), {"mid": merchant_id})
+
+            row = result.fetchone()
+            if row:
+                db_customer_id, db_customer_name = row.id, row.name or "Valued Customer"
+                db_phone_number, total_spend = row.phone_number or db_phone_number, float(row.total_spend) if row.total_spend else 12000.0
+                days_away = int(row.days_away) if row.days_away else 45
+
+                await session.execute(
+                    text("UPDATE campaigns SET thread_id = :tid WHERE merchant_id = :mid AND customer_id = :cid AND status = 'PENDING_APPROVAL'"),
+                    {"tid": thread_id, "mid": merchant_id, "cid": db_customer_id}
+                )
+                await session.commit()
+    except Exception as e:
+        print(f"⚠️ Could not fetch from DB: {e}")
+
+    # ── Safe execution based on live margin ──
+    discount_pct, coupon = calculate_margin_safe_discount(total_spend, margin_pct)
+
+    initial_state = {
+        "merchant_id": merchant_id, "thread_id": thread_id, "anomaly_detected": False, "drop_percentage": 0.0,
+        "target_customer": {"id": db_customer_id, "name": db_customer_name, "phone_number": db_phone_number, "lifetime_spend": total_spend, "days_away": days_away},
+        "generated_offer": {"discount_percentage": discount_pct, "coupon_code": coupon}, "approval_status": None, "execution_result": None,
+    }
+
+    # ... (Keep the exact same event_generator() logic below) ...
+
+
+# ─── Agent Streaming SSE ──────────────────────────────────────────────────────
 
 @router.get("/stream/{merchant_id}")
 async def stream_agent_execution(
@@ -74,7 +150,6 @@ async def stream_agent_execution(
                     {"cid": customer_id, "mid": merchant_id}
                 )
             else:
-                # Prefer the customer with longest absence rather than random
                 result = await session.execute(
                     text("""
                         SELECT id, name, phone_number, total_spend,
@@ -95,7 +170,6 @@ async def stream_agent_execution(
                 total_spend = float(row.total_spend) if row.total_spend else 12000.0
                 days_away = int(row.days_away) if row.days_away else 45
 
-                # Sync this session's thread_id with any pending campaign staged during upload
                 await session.execute(
                     text("""
                         UPDATE campaigns
@@ -144,7 +218,7 @@ async def stream_agent_execution(
                 node_name = list(event.keys())[0]
                 streamed_nodes.add(node_name)
 
-                await asyncio.sleep(1.0) 
+                await asyncio.sleep(1.0)
 
                 if node_name == "__interrupt__":
                     interrupt_payload = {
@@ -206,6 +280,69 @@ async def stream_agent_execution(
     return EventSourceResponse(event_generator())
 
 
+# ─── Welcome Bulk Greetings ───────────────────────────────────────────────────
+
+@router.post("/welcome-bulk")
+async def send_welcome_bulk(payload: WelcomeBulkRequest):
+    token = os.getenv("WHATSAPP_TOKEN")
+    phone_number_id = os.getenv("PHONE_NUMBER_ID") or os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+    
+    results = []
+    for cust in payload.customers:
+        target_phone = payload.test_phone or cust.phone_number
+        digits = re.sub(r"\D", "", str(target_phone or ""))
+        if len(digits) == 10:
+            digits = f"91{digits}"
+
+        message_text = (
+            f"Namaste {cust.customer_name}! 🙏\n\n"
+            f"Thank you for shopping at our store today. Your purchase of ₹{int(cust.amount_spent or 0):,} means the world to us.\n\n"
+            f"As a token of appreciation, here is a special 10% discount on your next visit! Use code: *WELCOME10*.\n\n"
+            f"See you again soon!"
+        )
+
+        wa_web_url = f"https://api.whatsapp.com/send?phone={digits}&text={urllib.parse.quote(message_text)}"
+        api_status = "READY"
+
+        if token and phone_number_id and digits:
+            try:
+                url = f"https://graph.facebook.com/v18.0/{phone_number_id}/messages"
+                headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                }
+                data = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": digits,
+                    "type": "text",
+                    "text": {"preview_url": False, "body": message_text}
+                }
+                async with httpx.AsyncClient() as client:
+                    resp = await client.post(url, headers=headers, json=data, timeout=8.0)
+                    api_status = "DELIVERED" if resp.status_code == 200 else f"META_ERROR_{resp.status_code}"
+            except Exception as e:
+                api_status = f"FAILED: {str(e)}"
+        else:
+            api_status = "SIMULATED_SUCCESS"
+
+        results.append({
+            "customer_name": cust.customer_name,
+            "phone_number": digits,
+            "message": message_text,
+            "wa_web_url": wa_web_url,
+            "status": api_status
+        })
+
+    return {
+        "status": "SUCCESS",
+        "total_dispatched": len(results),
+        "results": results
+    }
+
+
+# ─── Campaign Approval Endpoints ──────────────────────────────────────────────
+
 @router.post("/approve")
 async def approve_and_dispatch(request: ApprovalRequest):
     config = {"configurable": {"thread_id": request.thread_id}}
@@ -229,10 +366,8 @@ async def approve_and_dispatch(request: ApprovalRequest):
     except Exception as e:
         print(f"⚠️ State retrieval notice: {e}")
 
-    # Upsert into campaigns table: update existing pending campaign or insert new
     try:
         async with AsyncSessionLocal() as session:
-            # Check for pre-staged campaign with matching thread_id or pending customer_id
             lookup = await session.execute(
                 text("""
                     SELECT id, customer_id FROM campaigns 
@@ -283,7 +418,6 @@ async def approve_and_dispatch(request: ApprovalRequest):
                     }
                 )
 
-            # Retrieve customer details if missing
             if not customer_phone:
                 c_res = await session.execute(
                     text("SELECT name, phone_number FROM customers WHERE id = :cid"),
@@ -296,7 +430,6 @@ async def approve_and_dispatch(request: ApprovalRequest):
 
             await session.commit()
 
-        # Trigger WhatsApp message if approved
         if request.action == "APPROVED" and customer_phone:
             await safe_send_whatsapp_offer(customer_phone, customer_name, discount_pct, coupon_code)
 
@@ -321,7 +454,6 @@ async def bulk_approve_campaigns(request: BulkApproveRequest):
     try:
         async with AsyncSessionLocal() as session:
             for cid in request.campaign_ids:
-                # Fetch details for WhatsApp dispatch before updating
                 camp_query = await session.execute(
                     text("""
                         SELECT c.id, c.discount_percentage, c.coupon_code, cust.name, cust.phone_number
@@ -339,7 +471,6 @@ async def bulk_approve_campaigns(request: BulkApproveRequest):
                         SET status = :action,
                             created_at = NOW()
                         WHERE id = :cid AND merchant_id = :mid
-                        RETURNING id
                     """),
                     {"action": request.action, "cid": cid, "mid": request.merchant_id}
                 )
@@ -355,7 +486,6 @@ async def bulk_approve_campaigns(request: BulkApproveRequest):
 
             await session.commit()
 
-        # Dispatch WhatsApp messages
         for item in dispatched_list:
             if item["phone"]:
                 await safe_send_whatsapp_offer(item["phone"], item["name"], item["discount"], item["coupon"])

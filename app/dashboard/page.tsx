@@ -55,6 +55,24 @@ const TRANSLATIONS = {
     historySectionTitle: "Historical Performance",
     historySectionDesc: "Explore past weekly records and monthly overviews stored in database",
     noWeekSelected: "Click 'Previous Weeks' above to view data for any week.",
+    noWeeksRecorded: "No previous weeks recorded yet",
+    monthlyOverviewBtn: "Monthly Overview",
+    monthlyHeader: "Monthly Performance Aggregation",
+    closeView: "✕ Close View",
+    closeBtn: "✕ Close",
+
+    totalMonthlySales: "Total Monthly Sales",
+    totalMonthlyProfit: "Total Monthly Profit",
+    totalCapital: "Total Capital",
+    newShoppersAcquired: "New Shoppers Acquired",
+    monthlySalesTrend: "Monthly Sales Trend",
+    monthlyFootfallTrend: "Monthly Footfall Trend",
+    totalLabel: "total",
+    receiptsLabel: "receipts",
+    visitsLabel: "visits",
+    newLabel: "new",
+    regularsLabel: "returning regulars",
+    customersLabel: "customers",
 
     uploadTitle: "Upload Your Weekly Sales File",
     uploadSubtitle: "Drag & drop your POS export CSV here, or click to choose a file",
@@ -94,7 +112,7 @@ const TRANSLATIONS = {
     statusApproved: "APPROVED",
     statusRejected: "REJECTED",
     statusPending: "PENDING",
-    daysAgo2: "days",
+    daysAgo2: "days ago",
     spend1: "Lifetime Spend",
 
     node_searching: "Searching",
@@ -105,38 +123,129 @@ const TRANSLATIONS = {
 
     msg_init: "Checking store records for inactive customers...",
     msg_found: "Found customer needing win-back outreach.",
-    msg_planning: "Generated customized offer discount.",
+    msg_planning: "Generated margin-safe discount.",
     msg_waiting: "Offers ready for approval.",
     msg_approved: "Offer approved! Sent WhatsApp message to {name}.",
     msg_rejected: "Offer skipped."
   },
-  HI: { /* Keep identical for fallback */ }
+  HI: {
+    title: "ग्राहक वफादारी और प्रतिधारण",
+    subtitle: "अपनी साप्ताहिक POS फ़ाइल अपलोड करें और AI ग्राहकों को वापस लाने के लिए ऑफ़र तैयार करेगा।",
+    salesKpi: "साप्ताहिक बिक्री",
+    salesDesc: "चयनित अवधि के लिए कुल राजस्व",
+    profitKpi: "साप्ताहिक लाभ",
+    lossKpi: "साप्ताहिक नुकसान",
+    profitDesc: "चयनित अवधि के लिए शुद्ध लाभ",
+    lossDesc: "चयनित अवधि के लिए शुद्ध नुकसान",
+    regularKpi: "नियमित ग्राहक",
+    regularDesc: "इस अवधि में सक्रिय नियमित ग्राहक",
+    riskKpi: "जोखिम वाले ग्राहक",
+    riskDesc: "लंबे समय से न आने वाले ग्राहक",
+
+    graph1: "दैनिक बिक्री",
+    graph2: "दैनिक ग्राहक आगमन",
+    legendSales: "दैनिक बिक्री",
+    legendActive: "ग्राहक आगमन",
+    legendCurrent: "दिन का मुख्य आकर्षण",
+
+    previousWeeks: "पिछले सप्ताह",
+    selectWeekPrompt: "पिछली बिक्री, लाभ और प्रतिधारण देखने के लिए ड्रॉपडाउन से एक सप्ताह चुनें।",
+    historySectionTitle: "ऐतिहासिक प्रदर्शन",
+    historySectionDesc: "डेटाबेस में संग्रहीत पिछले साप्ताहिक रिकॉर्ड और मासिक सारांश देखें",
+    noWeekSelected: "किसी भी सप्ताह का डेटा देखने के लिए ऊपर 'पिछले सप्ताह' पर क्लिक करें।",
+    noWeeksRecorded: "अभी तक कोई पुराना हफ़्ता दर्ज नहीं है",
+    monthlyOverviewBtn: "मासिक अवलोकन",
+    monthlyHeader: "मासिक प्रदर्शन सारांश",
+    closeView: "✕ बंद करें",
+    closeBtn: "✕ बंद करें",
+
+    totalMonthlySales: "कुल मासिक बिक्री",
+    totalMonthlyProfit: "कुल मासिक लाभ",
+    totalCapital: "कुल लागत पूंजी",
+    newShoppersAcquired: "नए ग्राहक जुड़े",
+    monthlySalesTrend: "मासिक बिक्री रुझान",
+    monthlyFootfallTrend: "मासिक ग्राहक आवाजाही",
+    totalLabel: "कुल",
+    receiptsLabel: "रसीदें",
+    visitsLabel: "आगमन",
+    newLabel: "नए",
+    regularsLabel: "नियमित ग्राहक",
+    customersLabel: "ग्राहक",
+
+    uploadTitle: "साप्ताहिक बिक्री फ़ाइल अपलोड करें",
+    uploadSubtitle: "अपनी POS निर्यात CSV फ़ाइल यहाँ खींचें या चुनने के लिए क्लिक करें",
+    uploadBtn: "फ़ाइल चुनें",
+    uploadSuccess: "फ़ाइल अपलोड हो गई! AI लेनदेन स्कैन कर रहा है...",
+    uploadError: "अपलोड विफल रहा। कृपया फ़ाइल जांचें और पुनः प्रयास करें।",
+    uploadHint: "आवश्यक कॉलम: transaction_id, transaction_date, sales_amount, item_cost, phone_number, customer_name",
+    weeklyCapitalPlaceholder: "हफ़्ते की पूंजी",
+    weeklyCapitalTitle: "साप्ताहिक लागत पूंजी दर्ज करें (वैकल्पिक)",
+    uploadedBatchTitle: "अपलोड किए गए सप्ताह का विश्लेषण",
+    uploadedBatchSubtitle: "अपलोड की गई फ़ाइल के लिए तैयार किए गए मेट्रिक्स और ऑफ़र",
+
+    logsTitle: "लाइव AI गतिविधि फ़ीड",
+    outreachTitle: "संपर्क हेतु आवश्यक ग्राहक",
+    outreachSubtitle: "ये ग्राहक हाल ही में नहीं आए हैं। इन्हें वापस लाने के लिए विशेष छूट भेजें।",
+    approveAllBtn: "सभी को WhatsApp ऑफ़र भेजें",
+    approvingBtn: "ऑफ़र भेजे जा रहे हैं...",
+    outreachSuccess: "ऑफ़र सफलतापूर्वक भेज दिए गए!",
+    outreachSuccessDesc: "सभी ग्राहकों को WhatsApp संदेश भेज दिए गए हैं।",
+    skipCustomer: "छोड़ें",
+    historyTitle: "संपर्क किए गए ग्राहकों का इतिहास",
+    historyDesc: "उन सभी ग्राहकों की सूची जिन्हें आपने ऑफ़र भेजे हैं",
+    tableCol1: "ग्राहक आईडी",
+    tableCol2: "ग्राहक का नाम",
+    tableCol3: "दी गई छूट",
+    tableCol4: "आपका निर्णय",
+    tableCol5: "समय",
+
+    emptyLogs: "AI स्कैन शुरू करने के लिए ऊपर अपनी बिक्री फ़ाइल अपलोड करें...",
+    emptyOutreach: "वर्तमान में किसी भी ग्राहक को ऑफ़र की आवश्यकता नहीं है।",
+    emptyHistory: "अभी तक कोई इतिहास उपलब्ध नहीं है।",
+
+    atRiskBadge: "जोखिम में",
+    justNow: "अभी-अभी",
+    discountLabel: "छूट",
+    offLabel: "छूट",
+    statusApproved: "स्वीकृत",
+    statusRejected: "अस्वीकृत",
+    statusPending: "लंबित",
+    daysAgo2: "दिन पहले",
+    spend1: "कुल खर्च",
+
+    node_searching: "खोज जारी",
+    node_found: "ग्राहक मिला",
+    node_planning: "AI योजना",
+    node_waiting: "प्रतीक्षारत",
+    node_done: "पूर्ण",
+
+    msg_init: "दुकान के रिकॉर्ड में निष्क्रिय ग्राहकों की जांच की जा रही है...",
+    msg_found: "ऑफ़र हेतु ग्राहक की पहचान हुई।",
+    msg_planning: "व्यक्तिगत छूट ऑफ़र तैयार किया गया।",
+    msg_waiting: "ऑफ़र अनुमोदन के लिए तैयार हैं।",
+    msg_approved: "ऑफ़र स्वीकृत! {name} को WhatsApp संदेश भेजा गया।",
+    msg_rejected: "ऑफ़र छोड़ दिया गया।"
+  }
 };
 
 export default function MerchantDashboard() {
   const router = useRouter();
 
   const [lang, setLang] = useState<'EN' | 'HI'>('EN');
-  const t = TRANSLATIONS.EN;
+  const t = TRANSLATIONS[lang];
 
-  // Working Capital State
   const [weeksCapital, setWeeksCapital] = useState<string>("");
-
-  // Core State
   const [telemetryLogs, setTelemetryLogs] = useState<TelemetryLog[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLedgerItem[]>([]);
-
   const [hasUploadedThisSession, setHasUploadedThisSession] = useState(false);
   const [uploadedKpis, setUploadedKpis] = useState<KpiData | null>(null);
   const [uploadedGraphData, setUploadedGraphData] = useState<WeeklyGraphData | null>(null);
 
-  // Historical data state
   const [weeksBreakdown, setWeeksBreakdown] = useState<WeekBreakdown[]>([]);
   const [selectedHistoryWeekId, setSelectedHistoryWeekId] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Bulk Outreach Queue
   const [bulkQueue, setBulkQueue] = useState<ChurnedCustomer[]>([]);
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
   const [isApprovingAll, setIsApprovingAll] = useState(false);
@@ -177,7 +286,7 @@ export default function MerchantDashboard() {
         setWeeksBreakdown(stats.weeks_breakdown);
       }
     } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+      console.warn("Polling retry notice:", error);
     }
   }, []);
 
@@ -188,8 +297,7 @@ export default function MerchantDashboard() {
   }, [fetchDashboardData]);
 
   const stopStreamRef = useRef<(() => void) | null>(null);
-  const getClientTime = () =>
-    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const getClientTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const startAgentStream = (customerId?: number) => {
     if (stopStreamRef.current) stopStreamRef.current();
@@ -277,19 +385,22 @@ export default function MerchantDashboard() {
       setBulkQueue([]);
 
       toApprove.forEach((c, idx) => {
-        setTelemetryLogs(prev => [{
-          id: `log-appr-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
-          timestamp: getClientTime(),
-          nodeKey: 'node_done',
-          messageKey: 'msg_approved',
-          customerName: c.name,
-          status: 'completed'
-        }, ...prev]);
+        setTelemetryLogs(prev => [
+          {
+            id: `log-appr-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+            timestamp: getClientTime(),
+            nodeKey: 'node_done',
+            messageKey: 'msg_approved',
+            customerName: c.name,
+            status: 'completed'
+          },
+          ...prev
+        ]);
       });
 
       fetchDashboardData();
     } catch (err) {
-      console.error("Bulk approve failed:", err);
+      console.warn("Bulk approve warning:", err);
     } finally {
       setIsApprovingAll(false);
     }
@@ -319,8 +430,8 @@ export default function MerchantDashboard() {
   const selectedHistoryWeek = weeksBreakdown.find(w => w.week_id === selectedHistoryWeekId) || null;
   const historyGraphData = selectedHistoryWeek?.graph_data || null;
   const historyLabels = historyGraphData?.weeks ?? [];
-  
-  // Weekly History Specific Variables (Restored)
+
+  // Weekly History Specific Variables
   const historySales = selectedHistoryWeek?.kpis.total_sales ?? 0;
   const historyProfit = selectedHistoryWeek?.kpis.profit ?? 0;
   const historyRegular = selectedHistoryWeek?.kpis.regular_customers ?? 0;
@@ -334,7 +445,9 @@ export default function MerchantDashboard() {
   const mNew = weeksBreakdown.reduce((sum, w) => sum + (w.kpis.new_customers || 0), 0);
   const monthlyLabels = weeksBreakdown.map(w => w.short_label);
   const monthlySalesData = weeksBreakdown.map(w => w.kpis.total_sales);
-  const monthlyVisitsData = weeksBreakdown.map(w => w.graph_data?.visits?.reduce((a,b)=>a+b, 0) || w.kpis.total_customers);
+  
+  // Maps directly to Total Customers in weekly KPIs
+  const monthlyVisitsData = weeksBreakdown.map(w => w.kpis.total_customers);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col selection:bg-[#00BAF2]/20 selection:text-[#002970]">
@@ -401,6 +514,7 @@ export default function MerchantDashboard() {
 
             {/* 4 KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {/* Sales */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <span>{t.salesKpi}</span>
@@ -412,6 +526,7 @@ export default function MerchantDashboard() {
                 <p className="text-[11px] text-slate-400 mt-1">{t.salesDesc}</p>
               </div>
 
+              {/* Profit / Loss: Shows Only the Week's Capital in Subtext */}
               <div className={`bg-white p-5 rounded-2xl border shadow-xs ${
                 uploadedProfit >= 0 ? 'border-emerald-200' : 'border-rose-200'
               }`}>
@@ -431,10 +546,11 @@ export default function MerchantDashboard() {
                     : `-₹${Math.round(Math.abs(uploadedProfit)).toLocaleString('en-IN')}`}
                 </div>
                 <p className={`text-[11px] mt-1 ${uploadedProfit >= 0 ? 'text-slate-500' : 'text-rose-500'}`}>
-                  Sales (₹{Math.round(uploadedSales).toLocaleString('en-IN')}) - Capital
+                  {t.weeklyCapitalPlaceholder}: ₹{Math.round(uploadedCapital).toLocaleString('en-IN')}
                 </p>
               </div>
 
+              {/* Regular Customers */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <span>{t.regularKpi}</span>
@@ -444,10 +560,11 @@ export default function MerchantDashboard() {
                   {uploadedRegular + uploadedNew}
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  {uploadedRegular} returning regulars • {uploadedNew} new
+                  {uploadedRegular} {t.regularsLabel} • {uploadedNew} {t.newLabel}
                 </p>
               </div>
 
+              {/* Customers At Risk */}
               <div className="bg-white p-5 rounded-2xl border border-rose-200 shadow-xs">
                 <div className="flex justify-between items-center text-xs font-bold text-rose-600 uppercase tracking-wider">
                   <span>{t.riskKpi}</span>
@@ -467,7 +584,7 @@ export default function MerchantDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-[#002970]">{t.graph1}</h3>
                     <span className="text-[11px] font-bold text-slate-500">
-                      ₹{Math.round(uploadedSales).toLocaleString('en-IN')} {lang === 'EN' ? 'total' : 'कुल'}
+                      ₹{Math.round(uploadedSales).toLocaleString('en-IN')} {t.totalLabel}
                     </span>
                   </div>
                   <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
@@ -502,8 +619,12 @@ export default function MerchantDashboard() {
                     })}
                   </div>
                   <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 bg-[#00BAF2] rounded-xs mr-1.5"></span> {t.legendSales}</span>
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}</span>
+                    <span className="flex items-center">
+                      <span className="w-2.5 h-2.5 bg-[#00BAF2] rounded-xs mr-1.5"></span> {t.legendSales}
+                    </span>
+                    <span className="flex items-center">
+                      <span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}
+                    </span>
                   </div>
                 </div>
 
@@ -511,7 +632,7 @@ export default function MerchantDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-[#002970]">{t.graph2}</h3>
                     <span className="text-[11px] font-bold text-indigo-600">
-                      {uploadedGraphData.visits.reduce((a, b) => a + b, 0)} {lang === 'EN' ? 'receipts' : 'आगमन'}
+                      {uploadedGraphData.visits.reduce((a, b) => a + b, 0)} {t.receiptsLabel}
                     </span>
                   </div>
                   <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
@@ -524,7 +645,7 @@ export default function MerchantDashboard() {
                         <div key={`up-visits-${i}-${label}`} className="group relative flex flex-col items-center flex-1 max-w-[42px] justify-end space-y-2 cursor-pointer">
                           <div className="flex items-end justify-center h-36 w-full relative">
                             <div className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-30 bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-md shadow-lg whitespace-nowrap">
-                              {label}: {val} {lang === 'EN' ? 'visits' : 'आगमन'}
+                              {label}: {val} {t.visitsLabel}
                               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                             </div>
                             <div
@@ -546,8 +667,12 @@ export default function MerchantDashboard() {
                     })}
                   </div>
                   <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 bg-indigo-500 rounded-xs mr-1.5"></span> {t.legendActive}</span>
-                    <span className="flex items-center"><span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}</span>
+                    <span className="flex items-center">
+                      <span className="w-2.5 h-2.5 bg-indigo-500 rounded-xs mr-1.5"></span> {t.legendActive}
+                    </span>
+                    <span className="flex items-center">
+                      <span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -566,8 +691,7 @@ export default function MerchantDashboard() {
                   <div className="flex-1 overflow-y-auto space-y-3 font-mono text-[12px] pr-2 py-4">
                     {telemetryLogs.map((log) => {
                       const nodeText = t[log.nodeKey as keyof typeof t] as string || log.nodeKey;
-                      const msgText = (t[log.messageKey as keyof typeof t] as string)
-                        ?.replace('{name}', log.customerName || '') || log.messageKey;
+                      const msgText = (t[log.messageKey as keyof typeof t] as string)?.replace('{name}', log.customerName || '') || log.messageKey;
                       return (
                         <div key={log.id} className="p-3 rounded-xl border bg-white/5 border-white/5 text-slate-300">
                           <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
@@ -603,7 +727,7 @@ export default function MerchantDashboard() {
                       <h3 className="text-base font-black text-emerald-800">{t.outreachSuccess}</h3>
                       <p className="text-sm text-emerald-600">{t.outreachSuccessDesc}</p>
                       <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                        {approvedCount} {lang === 'EN' ? 'customers' : 'ग्राहक'}
+                        {approvedCount} {t.customersLabel}
                       </span>
                     </div>
                   )}
@@ -634,7 +758,15 @@ export default function MerchantDashboard() {
                         ))}
                       </div>
                       <button onClick={handleApproveAll} disabled={isApprovingAll} className="w-full py-4 bg-[#002970] hover:bg-[#001D52] disabled:opacity-60 text-white rounded-2xl text-sm font-black shadow-lg cursor-pointer transition-colors flex items-center justify-center space-x-2">
-                        {isApprovingAll ? <><span className="animate-spin mr-2">⏳</span> {t.approvingBtn}</> : <><Smartphone className="w-4 h-4 text-[#00BAF2] mr-2" /> {t.approveAllBtn} {visibleQueue.length > 1 ? `(${visibleQueue.length})` : ''}</>}
+                        {isApprovingAll ? (
+                          <>
+                            <span className="animate-spin mr-2">⏳</span> {t.approvingBtn}
+                          </>
+                        ) : (
+                          <>
+                            <Smartphone className="w-4 h-4 text-[#00BAF2] mr-2" /> {t.approveAllBtn} {visibleQueue.length > 1 ? `(${visibleQueue.length})` : ''}
+                          </>
+                        )}
                       </button>
                     </div>
                   )}
@@ -672,7 +804,7 @@ export default function MerchantDashboard() {
                 }`}
               >
                 <BarChart3 className="w-3.5 h-3.5" />
-                <span>Monthly Overview</span>
+                <span>{t.monthlyOverviewBtn}</span>
               </button>
 
               <div className="relative" ref={dropdownRef}>
@@ -693,7 +825,7 @@ export default function MerchantDashboard() {
                     <div className="max-h-60 overflow-y-auto py-1">
                       {weeksBreakdown.length === 0 ? (
                         <div className="px-4 py-3 text-xs text-slate-400 text-center">
-                          {lang === 'EN' ? 'No previous weeks recorded yet' : 'अभी तक कोई पुराना हफ़्ता दर्ज नहीं है'}
+                          {t.noWeeksRecorded}
                         </div>
                       ) : (
                         weeksBreakdown.map((w) => {
@@ -713,7 +845,7 @@ export default function MerchantDashboard() {
                               <div className="flex flex-col">
                                 <span className="text-slate-900">{w.label}</span>
                                 <span className="text-[10px] font-normal text-slate-400">
-                                  ₹{Math.round(w.kpis.total_sales).toLocaleString('en-IN')} • {w.kpis.regular_customers} {lang === 'EN' ? 'regulars' : 'ग्राहक'} {w.kpis.new_customers ? `• ${w.kpis.new_customers} ${lang === 'EN' ? 'new' : 'नए'}` : ''}
+                                  ₹{Math.round(w.kpis.total_sales).toLocaleString('en-IN')} • {w.kpis.regular_customers} {t.regularsLabel} {w.kpis.new_customers ? `• ${w.kpis.new_customers} ${t.newLabel}` : ''}
                                 </span>
                               </div>
                               {isSelected && <CheckCircle2 className="w-4 h-4 text-[#00BAF2] shrink-0 ml-2" />}
@@ -734,34 +866,57 @@ export default function MerchantDashboard() {
               <div className="flex items-center justify-between bg-purple-50/60 border border-purple-100 rounded-2xl px-4 py-2.5">
                 <div className="flex items-center space-x-2 text-xs font-bold text-purple-900">
                   <span className="w-2 h-2 rounded-full bg-purple-500" />
-                  <span>Monthly Performance Aggregation</span>
+                  <span>{t.monthlyHeader}</span>
                 </div>
-                <button onClick={() => setSelectedHistoryWeekId(null)} className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer">✕ Close</button>
+                <button onClick={() => setSelectedHistoryWeekId(null)} className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer">{t.closeBtn}</button>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider"><span>Total Monthly Sales</span><Wallet className="w-4 h-4 text-[#00BAF2]" /></div>
-                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">₹{Math.round(mSales).toLocaleString('en-IN')}</div>
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <span>{t.totalMonthlySales}</span>
+                    <Wallet className="w-4 h-4 text-[#00BAF2]" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+                    ₹{Math.round(mSales).toLocaleString('en-IN')}
+                  </div>
                 </div>
+
                 <div className="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
-                  <div className="flex justify-between items-center text-xs font-bold text-emerald-700 uppercase tracking-wider"><span>Total Monthly Profit</span><TrendingUp className="w-4 h-4 text-emerald-600" /></div>
-                  <div className="mt-2 text-2xl sm:text-3xl font-black text-emerald-700">₹{Math.round(mProfit).toLocaleString('en-IN')}</div>
-                  <p className="text-[11px] text-slate-400 mt-1">Total Sales - Total Capital</p>
+                  <div className="flex justify-between items-center text-xs font-bold text-emerald-700 uppercase tracking-wider">
+                    <span>{t.totalMonthlyProfit}</span>
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-black text-emerald-700">
+                    ₹{Math.round(mProfit).toLocaleString('en-IN')}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">{t.totalMonthlySales} - {t.totalCapital}</p>
                 </div>
+
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider"><span>Total Capital</span><Database className="w-4 h-4 text-indigo-500" /></div>
-                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">₹{Math.round(mCapital).toLocaleString('en-IN')}</div>
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <span>{t.totalCapital}</span>
+                    <Database className="w-4 h-4 text-indigo-500" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+                    ₹{Math.round(mCapital).toLocaleString('en-IN')}
+                  </div>
                 </div>
+
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider"><span>New Shoppers Acquired</span><Sparkles className="w-4 h-4 text-amber-500" /></div>
-                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">{mNew}</div>
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <span>{t.newShoppersAcquired}</span>
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
+                    {mNew}
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                  <h3 className="text-sm font-bold text-[#002970] mb-4">Monthly Sales Trend</h3>
+                  <h3 className="text-sm font-bold text-[#002970] mb-4">{t.monthlySalesTrend}</h3>
                   <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
                     {monthlySalesData.map((val, i) => (
                       <div key={`m-sales-${i}`} className="group relative flex flex-col items-center flex-1 max-w-[42px] justify-end space-y-2 cursor-pointer">
@@ -776,14 +931,15 @@ export default function MerchantDashboard() {
                     ))}
                   </div>
                 </div>
+
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
-                  <h3 className="text-sm font-bold text-[#002970] mb-4">Monthly Footfall Trend</h3>
+                  <h3 className="text-sm font-bold text-[#002970] mb-4">{t.monthlyFootfallTrend}</h3>
                   <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
                     {monthlyVisitsData.map((val, i) => (
                       <div key={`m-visits-${i}`} className="group relative flex flex-col items-center flex-1 max-w-[42px] justify-end space-y-2 cursor-pointer">
                         <div className="flex items-end justify-center h-36 w-full relative">
                           <div className="absolute -top-7 opacity-0 group-hover:opacity-100 bg-slate-900 text-white text-[10px] py-1 px-2 rounded shadow-lg whitespace-nowrap z-10">
-                            {val} visits
+                            {val} {t.customersLabel}
                           </div>
                           <div className="w-full max-w-[28px] bg-purple-500 rounded-t-sm transition-all group-hover:brightness-110" style={{ height: `${val === 0 ? 0 : Math.max(5, (val / Math.max(...monthlyVisitsData)) * 100)}%` }} />
                         </div>
@@ -808,7 +964,7 @@ export default function MerchantDashboard() {
                   onClick={() => setSelectedHistoryWeekId(null)}
                   className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  {lang === 'EN' ? '✕ Close View' : '✕ बंद करें'}
+                  {t.closeView}
                 </button>
               </div>
 
@@ -825,6 +981,7 @@ export default function MerchantDashboard() {
                   <p className="text-[11px] text-slate-400 mt-1">{t.salesDesc}</p>
                 </div>
 
+                {/* Profit / Loss: Shows Only the Specific Week's Capital in Subtext */}
                 <div className={`bg-white p-5 rounded-2xl border shadow-xs ${
                   historyProfit >= 0 ? 'border-emerald-200' : 'border-rose-200'
                 }`}>
@@ -844,7 +1001,7 @@ export default function MerchantDashboard() {
                       : `-₹${Math.round(Math.abs(historyProfit)).toLocaleString('en-IN')}`}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Sales (₹{historySales.toLocaleString('en-IN')}) - Capital (₹{selectedHistoryWeek.kpis.weekly_capital.toLocaleString('en-IN')})
+                    {t.weeklyCapitalPlaceholder}: ₹{Math.round(selectedHistoryWeek.kpis.weekly_capital).toLocaleString('en-IN')}
                   </p>
                 </div>
 
@@ -857,7 +1014,7 @@ export default function MerchantDashboard() {
                     {historyRegular + historyNew}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    {historyRegular} {lang === 'EN' ? 'returning regulars' : 'नियमित'} {historyNew > 0 ? `• ${historyNew} ${lang === 'EN' ? 'new' : 'नए'}` : ''}
+                    {historyRegular} {t.regularsLabel} {historyNew > 0 ? `• ${historyNew} ${t.newLabel}` : ''}
                   </p>
                 </div>
 
@@ -882,7 +1039,7 @@ export default function MerchantDashboard() {
                         {t.graph1} — {selectedHistoryWeek.label}
                       </h3>
                       <span className="text-[11px] font-bold text-slate-500">
-                        ₹{Math.round(historySales).toLocaleString('en-IN')} {lang === 'EN' ? 'total' : 'कुल'}
+                        ₹{Math.round(historySales).toLocaleString('en-IN')} {t.totalLabel}
                       </span>
                     </div>
                     <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
@@ -913,8 +1070,12 @@ export default function MerchantDashboard() {
                       })}
                     </div>
                     <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      <span className="flex items-center"><span className="w-2.5 h-2.5 bg-[#00BAF2] rounded-xs mr-1.5"></span> {t.legendSales}</span>
-                      <span className="flex items-center"><span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}</span>
+                      <span className="flex items-center">
+                        <span className="w-2.5 h-2.5 bg-[#00BAF2] rounded-xs mr-1.5"></span> {t.legendSales}
+                      </span>
+                      <span className="flex items-center">
+                        <span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}
+                      </span>
                     </div>
                   </div>
 
@@ -924,7 +1085,7 @@ export default function MerchantDashboard() {
                         {t.graph2} — {selectedHistoryWeek.label}
                       </h3>
                       <span className="text-[11px] font-bold text-indigo-600">
-                        {historyGraphData.visits.reduce((a, b) => a + b, 0)} {lang === 'EN' ? 'receipts' : 'आगमन'}
+                        {historyGraphData.visits.reduce((a, b) => a + b, 0)} {t.receiptsLabel}
                       </span>
                     </div>
                     <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
@@ -937,7 +1098,7 @@ export default function MerchantDashboard() {
                           <div key={`hist-visits-${i}-${label}`} className="group relative flex flex-col items-center flex-1 max-w-[42px] justify-end space-y-2 cursor-pointer">
                             <div className="flex items-end justify-center h-36 w-full relative">
                               <div className="absolute -top-9 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-30 bg-slate-900 text-white text-[11px] font-bold py-1 px-2.5 rounded-md shadow-lg whitespace-nowrap">
-                                {label}: {val} {lang === 'EN' ? 'visits' : 'आगमन'}
+                                {label}: {val} {t.visitsLabel}
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                               </div>
                               <div
@@ -955,8 +1116,12 @@ export default function MerchantDashboard() {
                       })}
                     </div>
                     <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      <span className="flex items-center"><span className="w-2.5 h-2.5 bg-indigo-500 rounded-xs mr-1.5"></span> {t.legendActive}</span>
-                      <span className="flex items-center"><span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}</span>
+                      <span className="flex items-center">
+                        <span className="w-2.5 h-2.5 bg-indigo-500 rounded-xs mr-1.5"></span> {t.legendActive}
+                      </span>
+                      <span className="flex items-center">
+                        <span className="w-2.5 h-2.5 bg-[#002970] rounded-xs mr-1.5"></span> {t.legendCurrent}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -996,7 +1161,9 @@ export default function MerchantDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {auditLogs.length === 0 ? (
-                  <tr><td colSpan={5} className="py-8 text-center text-slate-400">{t.emptyHistory}</td></tr>
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400">{t.emptyHistory}</td>
+                  </tr>
                 ) : (
                   auditLogs.map((tx, index) => {
                     const statusText =
