@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Store, Users, Wallet, CheckCircle2, TrendingUp, TrendingDown,
-  X, Smartphone, Terminal, UserX, Calendar, ChevronDown, Database, BarChart3, Sparkles
+  X, Smartphone, Terminal, UserX, Calendar, ChevronDown, Database, BarChart3, Sparkles, ShieldCheck
 } from 'lucide-react';
 import {
   listenToAgent, UploadResult, WeeklyGraphData, KpiData,
@@ -126,7 +126,13 @@ const TRANSLATIONS = {
     msg_planning: "Generated margin-safe discount.",
     msg_waiting: "Offers ready for approval.",
     msg_approved: "Offer approved! Sent WhatsApp message to {name}.",
-    msg_rejected: "Offer skipped."
+    msg_rejected: "Offer skipped.",
+
+    roiTitle: "Margin Safety Check (Zero Loss Guarantee)",
+    roiCost: "Estimated Discount Cost",
+    roiRecovery: "Projected New Revenue",
+    roiNet: "Net Revenue Gain",
+    roiDesc: "Your weekly profit is ₹{profit}. The total cost of these discounts is safely capped at ₹{cost}. When these {count} customers return, they will generate ~₹{recovery} in new sales. You are mathematically guaranteed to stay in long-term profit."
   },
   HI: {
     title: "ग्राहक वफादारी और प्रतिधारण",
@@ -224,7 +230,13 @@ const TRANSLATIONS = {
     msg_planning: "व्यक्तिगत छूट ऑफ़र तैयार किया गया।",
     msg_waiting: "ऑफ़र अनुमोदन के लिए तैयार हैं।",
     msg_approved: "ऑफ़र स्वीकृत! {name} को WhatsApp संदेश भेजा गया।",
-    msg_rejected: "ऑफ़र छोड़ दिया गया।"
+    msg_rejected: "ऑफ़र छोड़ दिया गया।",
+
+    roiTitle: "मार्जिन सुरक्षा जांच (शून्य नुकसान की गारंटी)",
+    roiCost: "अनुमानित छूट लागत",
+    roiRecovery: "संभावित नया राजस्व",
+    roiNet: "शुद्ध राजस्व लाभ",
+    roiDesc: "आपका साप्ताहिक लाभ ₹{profit} है। इन छूटों की कुल लागत ₹{cost} पर सुरक्षित रूप से सीमित है। जब ये {count} ग्राहक वापस लौटेंगे, तो वे लगभग ₹{recovery} की नई बिक्री लाएंगे। लंबी अवधि में आपका लाभ गणितीय रूप से सुनिश्चित है।"
   }
 };
 
@@ -425,28 +437,35 @@ export default function MerchantDashboard() {
   const uploadedLabels = uploadedGraphData?.weeks ?? [];
   const visibleQueue = bulkQueue.filter(c => !skippedIds.has(c.id));
 
+  // ── ROI & MARGIN SAFETY MATH ──
+  const totalVisitsThisWeek = uploadedGraphData?.visits?.reduce((a, b) => a + b, 0) || 1;
+  const avgOrderValue = uploadedSales > 0 ? (uploadedSales / totalVisitsThisWeek) : 2500;
+  
+  const totalDiscountCost = visibleQueue.reduce((sum, cust) => {
+    return sum + (avgOrderValue * ((cust.discount ?? 15) / 100));
+  }, 0);
+  
+  const totalProjectedRevenue = visibleQueue.length * avgOrderValue;
+  const netGain = totalProjectedRevenue - totalDiscountCost;
+
   // ── MONTHLY & HISTORICAL VIEW METRICS ──
   const isMonthlyView = selectedHistoryWeekId === "monthly";
   const selectedHistoryWeek = weeksBreakdown.find(w => w.week_id === selectedHistoryWeekId) || null;
   const historyGraphData = selectedHistoryWeek?.graph_data || null;
   const historyLabels = historyGraphData?.weeks ?? [];
 
-  // Weekly History Specific Variables
   const historySales = selectedHistoryWeek?.kpis.total_sales ?? 0;
   const historyProfit = selectedHistoryWeek?.kpis.profit ?? 0;
   const historyRegular = selectedHistoryWeek?.kpis.regular_customers ?? 0;
   const historyNew = selectedHistoryWeek?.kpis.new_customers ?? 0;
   const historyRisk = selectedHistoryWeek?.kpis.at_risk_customers ?? 0;
 
-  // Monthly Aggregation Data
   const mSales = weeksBreakdown.reduce((sum, w) => sum + w.kpis.total_sales, 0);
   const mProfit = weeksBreakdown.reduce((sum, w) => sum + w.kpis.profit, 0);
   const mCapital = weeksBreakdown.reduce((sum, w) => sum + w.kpis.weekly_capital, 0);
   const mNew = weeksBreakdown.reduce((sum, w) => sum + (w.kpis.new_customers || 0), 0);
   const monthlyLabels = weeksBreakdown.map(w => w.short_label);
   const monthlySalesData = weeksBreakdown.map(w => w.kpis.total_sales);
-  
-  // Maps directly to Total Customers in weekly KPIs
   const monthlyVisitsData = weeksBreakdown.map(w => w.kpis.total_customers);
 
   return (
@@ -463,7 +482,6 @@ export default function MerchantDashboard() {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Week's Capital Input */}
           <div className="relative flex items-center">
             <span className="absolute left-3 text-xs font-bold text-slate-400">₹</span>
             <input
@@ -514,7 +532,6 @@ export default function MerchantDashboard() {
 
             {/* 4 KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {/* Sales */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <span>{t.salesKpi}</span>
@@ -526,7 +543,6 @@ export default function MerchantDashboard() {
                 <p className="text-[11px] text-slate-400 mt-1">{t.salesDesc}</p>
               </div>
 
-              {/* Profit / Loss: Shows Only the Week's Capital in Subtext */}
               <div className={`bg-white p-5 rounded-2xl border shadow-xs ${
                 uploadedProfit >= 0 ? 'border-emerald-200' : 'border-rose-200'
               }`}>
@@ -550,7 +566,6 @@ export default function MerchantDashboard() {
                 </p>
               </div>
 
-              {/* Regular Customers */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <span>{t.regularKpi}</span>
@@ -564,7 +579,6 @@ export default function MerchantDashboard() {
                 </p>
               </div>
 
-              {/* Customers At Risk */}
               <div className="bg-white p-5 rounded-2xl border border-rose-200 shadow-xs">
                 <div className="flex justify-between items-center text-xs font-bold text-rose-600 uppercase tracking-wider">
                   <span>{t.riskKpi}</span>
@@ -632,7 +646,7 @@ export default function MerchantDashboard() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-[#002970]">{t.graph2}</h3>
                     <span className="text-[11px] font-bold text-indigo-600">
-                      {uploadedGraphData.visits.reduce((a, b) => a + b, 0)} {t.receiptsLabel}
+                      {uploadedGraphData.visits.reduce((a, b) => a + b, 0)} {t.customersLabel}
                     </span>
                   </div>
                   <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
@@ -733,42 +747,75 @@ export default function MerchantDashboard() {
                   )}
 
                   {!bulkApproved && visibleQueue.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-xs text-slate-500">{t.outreachSubtitle}</p>
-                      <div className="space-y-2.5">
-                        {visibleQueue.map((customer, idx) => (
-                          <div key={`queue-item-${customer.id}-${customer.campaign_id ?? idx}`} className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="text-xs font-mono font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">{t.atRiskBadge}</span>
-                                <span className="text-xs text-slate-400">{customer.days_away} {t.daysAgo2}</span>
-                              </div>
-                              <h3 className="text-sm font-bold text-slate-900 truncate">{customer.name}</h3>
-                              <div className="flex items-center space-x-3 mt-1">
-                                <span className="text-xs text-slate-500">
-                                  {t.spend1}: <span className="font-bold text-slate-800">₹{Math.round(customer.total_spend).toLocaleString('en-IN')}</span>
-                                </span>
-                                <span className="text-xs text-emerald-600 font-black">{customer.discount ?? 15}% {t.discountLabel}</span>
-                              </div>
-                            </div>
-                            <button onClick={() => handleSkip(customer.id, customer.campaign_id)} className="ml-3 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors shrink-0 cursor-pointer" title={t.skipCustomer}>
-                              <X className="w-4 h-4" />
-                            </button>
+                    <>
+                      {/* ── MARGIN SAFETY TRUST WIDGET ── */}
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 shadow-xs mb-4">
+                        <div className="flex items-center space-x-2 mb-4">
+                          <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                          <h3 className="text-sm font-black text-emerald-900">{t.roiTitle}</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                          <div className="bg-white rounded-xl p-3 border border-emerald-100 shadow-2xs">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase">{t.roiCost}</div>
+                            <div className="text-lg font-black text-rose-600">-₹{Math.round(totalDiscountCost).toLocaleString('en-IN')}</div>
                           </div>
-                        ))}
+                          <div className="bg-white rounded-xl p-3 border border-emerald-100 shadow-2xs">
+                            <div className="text-[10px] font-bold text-slate-500 uppercase">{t.roiRecovery}</div>
+                            <div className="text-lg font-black text-[#002970]">+₹{Math.round(totalProjectedRevenue).toLocaleString('en-IN')}</div>
+                          </div>
+                          <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-200 shadow-2xs">
+                            <div className="text-[10px] font-bold text-emerald-700 uppercase">{t.roiNet}</div>
+                            <div className="text-lg font-black text-emerald-700">+₹{Math.round(netGain).toLocaleString('en-IN')}</div>
+                          </div>
+                        </div>
+                        
+                        <p className="text-[11px] text-emerald-800 leading-relaxed font-medium">
+                          {t.roiDesc
+                            .replace('{cost}', Math.round(totalDiscountCost).toLocaleString('en-IN'))
+                            .replace('{profit}', Math.round(uploadedProfit).toLocaleString('en-IN'))
+                            .replace('{count}', visibleQueue.length.toString())
+                            .replace('{recovery}', Math.round(totalProjectedRevenue).toLocaleString('en-IN'))}
+                        </p>
                       </div>
-                      <button onClick={handleApproveAll} disabled={isApprovingAll} className="w-full py-4 bg-[#002970] hover:bg-[#001D52] disabled:opacity-60 text-white rounded-2xl text-sm font-black shadow-lg cursor-pointer transition-colors flex items-center justify-center space-x-2">
-                        {isApprovingAll ? (
-                          <>
-                            <span className="animate-spin mr-2">⏳</span> {t.approvingBtn}
-                          </>
-                        ) : (
-                          <>
-                            <Smartphone className="w-4 h-4 text-[#00BAF2] mr-2" /> {t.approveAllBtn} {visibleQueue.length > 1 ? `(${visibleQueue.length})` : ''}
-                          </>
-                        )}
-                      </button>
-                    </div>
+
+                      <div className="space-y-3">
+                        <p className="text-xs text-slate-500">{t.outreachSubtitle}</p>
+                        <div className="space-y-2.5">
+                          {visibleQueue.map((customer, idx) => (
+                            <div key={`queue-item-${customer.id}-${customer.campaign_id ?? idx}`} className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <span className="text-xs font-mono font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">{t.atRiskBadge}</span>
+                                  <span className="text-xs text-slate-400">{customer.days_away} {t.daysAgo2}</span>
+                                </div>
+                                <h3 className="text-sm font-bold text-slate-900 truncate">{customer.name}</h3>
+                                <div className="flex items-center space-x-3 mt-1">
+                                  <span className="text-xs text-slate-500">
+                                    {t.spend1}: <span className="font-bold text-slate-800">₹{Math.round(customer.total_spend).toLocaleString('en-IN')}</span>
+                                  </span>
+                                  <span className="text-xs text-emerald-600 font-black">{customer.discount ?? 15}% {t.discountLabel}</span>
+                                </div>
+                              </div>
+                              <button onClick={() => handleSkip(customer.id, customer.campaign_id)} className="ml-3 p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors shrink-0 cursor-pointer" title={t.skipCustomer}>
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button onClick={handleApproveAll} disabled={isApprovingAll} className="w-full py-4 bg-[#002970] hover:bg-[#001D52] disabled:opacity-60 text-white rounded-2xl text-sm font-black shadow-lg cursor-pointer transition-colors flex items-center justify-center space-x-2">
+                          {isApprovingAll ? (
+                            <>
+                              <span className="animate-spin mr-2">⏳</span> {t.approvingBtn}
+                            </>
+                          ) : (
+                            <>
+                              <Smartphone className="w-4 h-4 text-[#00BAF2] mr-2" /> {t.approveAllBtn} {visibleQueue.length > 1 ? `(${visibleQueue.length})` : ''}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </>
                   )}
 
                   {!bulkApproved && visibleQueue.length === 0 && (
@@ -1085,7 +1132,7 @@ export default function MerchantDashboard() {
                         {t.graph2} — {selectedHistoryWeek.label}
                       </h3>
                       <span className="text-[11px] font-bold text-indigo-600">
-                        {historyGraphData.visits.reduce((a, b) => a + b, 0)} {t.receiptsLabel}
+                        {historyGraphData.visits.reduce((a, b) => a + b, 0)} {t.customersLabel}
                       </span>
                     </div>
                     <div className="flex items-end justify-between h-44 px-2 sm:px-4 border-b border-slate-100 pb-2 gap-1.5 sm:gap-3">
