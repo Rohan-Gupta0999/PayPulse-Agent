@@ -1,561 +1,420 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
+  Store,
+  ArrowRight,
+  UploadCloud,
+  BrainCircuit,
   ShieldCheck,
-  Activity,
-  AlertCircle,
-  CheckCircle2,
-  TrendingDown,
-  PackageMinus,
   Send,
-  Play,
-  Mail,
-  RotateCcw,
-  ChevronDown,
-  X
-} from 'lucide-react';
+  Sparkles,
+  CheckCircle2,
+  Database,
+  Cpu,
+  Lock,
+  PauseCircle,
+  FileSpreadsheet,
+  AlertTriangle,
+  Smartphone,
+  Check,
+} from "lucide-react";
 
-export default function Dashboard() {
-  const router = useRouter();
+export default function Page() {
+  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
 
-  // Navigation & Scroll State
-  const [isNavVisible, setIsNavVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  // Demo State
-  const [demoState, setDemoState] = useState('idle');
-
-  // Contact Support Popup State
-  const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState('Payment issue');
-  const [issueDescription, setIssueDescription] = useState('');
-
-  const [logs, setLogs] = useState<string[]>([
-    "[10:00:00] AI Agent initialized.",
-    "[10:00:05] Monitoring transaction streams...",
-    "[10:15:00] Reconciled 42 morning settlements successfully."
-  ]);
-
-  // Handle Dynamic Navbar Scroll Logic
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const halfScreenHeight = window.innerHeight / 2;
-
-      if (currentScrollY > halfScreenHeight) {
-        if (currentScrollY > lastScrollY) {
-          setIsNavVisible(false);
-        } else {
-          setIsNavVisible(true);
-        }
-      } else {
-        setIsNavVisible(true);
-      }
-      setLastScrollY(currentScrollY);
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  const triggerAnomaly = () => {
-    setDemoState('detecting');
-    setLogs(prev => [...prev, "[15:28:10] ⚠️ Anomaly Detected: 34% drop in food order conversions."]);
-    setTimeout(() => {
-      setDemoState('action_required');
-      setLogs(prev => [...prev, "[15:28:12] 🚀 Agent Proposal: Auto-generate 15% discount code for afternoon snack buyers."]);
-    }, 1500);
-  };
-
-  const approveAction = () => {
-    setTimeout(() => {
-      setLogs(prev => [...prev, "[15:30:05] ✅ ISSUE RESOLVED. ₹1,500 Revenue Recovered."]);
-      setDemoState('resolved');
-    }, 2500);
-  };
-
-  // Reset functionality to return to idle monitoring
-  const resetToIdle = () => {
-    setDemoState('idle');
-    setLogs([
-      "[10:00:00] AI Agent initialized.",
-      "[10:00:05] Monitoring transaction streams...",
-      "[10:15:00] Reconciled 42 morning settlements successfully."
-    ]);
-  };
-
-  const scrollToDashboard = () => {
-    document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const scrollToTop = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-x-hidden flex flex-col justify-between">
+    <div className="min-h-screen bg-[#fafbfc] text-slate-900 flex flex-col font-sans selection:bg-[#00BAF2]/20 selection:text-[#002970] scroll-smooth relative overflow-x-hidden">
       
-      {/* DYNAMIC GLASSMORPHIC NAVBAR */}
-      <nav
-        className={`fixed top-0 w-full z-50 transition-transform duration-300 ease-in-out ${
-          isNavVisible ? 'translate-y-0' : '-translate-y-full'
-        } bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 lg:px-12 py-3.5 flex justify-between items-center shadow-sm`}
-      >
-        {/* Brand Logo & Name */}
-        <div
-          onClick={() => window.location.reload()}
-          className="flex items-center space-x-2.5 cursor-pointer select-none group"
-          title="Refresh Dashboard"
-        >
-          <div className="w-8 h-8 bg-[#00BAF2] rounded-xl flex items-center justify-center shadow-md shadow-[#00BAF2]/25 group-hover:scale-105 transition-transform">
-            <ShieldCheck className="text-white w-5 h-5" />
+      {/* High-Definition Cursor-Reactive Dot Canvas */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(#002970_1.15px,transparent_1.15px)] [background-size:22px_22px] opacity-[0.12]" />
+
+      {/* Reactive cursor illumination layer */}
+      <div
+        className="fixed inset-0 pointer-events-none bg-[radial-gradient(#00BAF2_1.5px,transparent_1.5px)] [background-size:22px_22px] opacity-100"
+        style={{
+          maskImage: `radial-gradient(280px circle at ${mousePos.x}px ${mousePos.y}px, black 25%, transparent 80%)`,
+          WebkitMaskImage: `radial-gradient(280px circle at ${mousePos.x}px ${mousePos.y}px, black 25%, transparent 80%)`,
+        }}
+      />
+
+      {/* Ambient specular glow */}
+      <div
+        className="fixed inset-0 pointer-events-none transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(420px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 186, 242, 0.085), transparent 80%)`,
+        }}
+      />
+
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_900px_at_50%_-10%,rgba(0,186,242,0.06),transparent)]" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_700px_at_90%_75%,rgba(0,41,112,0.03),transparent)]" />
+
+      {/* macOS Liquid Glass Top Bar */}
+      <header className="sticky top-0 z-50 bg-white/40 backdrop-blur-2xl backdrop-saturate-200 border-b border-white/50 px-6 lg:px-12 py-3.5 flex justify-between items-center shadow-[inset_0_1px_0_0_rgba(255,255,255,0.9),0_6px_24px_-4px_rgba(0,41,112,0.04)] transition-all">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-9 h-9 bg-gradient-to-br from-[#00BAF2] to-[#0090bf] rounded-2xl flex items-center justify-center shadow-[0_2px_8px_rgba(0,186,242,0.35)]">
+            <Store className="text-white w-5 h-5" />
           </div>
-          <span className="text-xl font-black tracking-tight text-[#002970]">
-            PayPulse
-          </span>
+          <span className="text-xl font-black tracking-tight text-[#002970]">PayPulse</span>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center space-x-3">
-          <button
-            onClick={() => router.push('/login?mode=login')}
-            className="px-5 py-2 rounded-full border border-slate-200 text-xs md:text-sm font-semibold text-slate-700 hover:bg-slate-100/80 transition-all duration-150"
+          <Link
+            href="/login"
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-[#002970]/90 hover:bg-[#002970] text-white text-xs font-bold rounded-xl shadow-[0_2px_10px_rgba(0,41,112,0.2)] backdrop-blur-md transition-all cursor-pointer active:scale-95"
           >
-            Login
-          </button>
-          <button
-            onClick={() => router.push('/login?mode=signup')}
-            className="px-5 py-2 rounded-full bg-[#00BAF2] hover:bg-[#009fd0] text-white text-xs md:text-sm font-semibold transition-all duration-150 shadow-md shadow-[#00BAF2]/25"
-          >
-            Sign Up
-          </button>
+            <span>Launch Dashboard</span>
+            <ArrowRight className="w-3.5 h-3.5 text-[#00BAF2]" />
+          </Link>
         </div>
-      </nav>
-     {/* SECTION 1: LANDING PAGE HERO */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 px-6 text-center overflow-hidden">
-        {/* Soft, Eye-Soothing Dotted Grid with Radial Fade */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#00BAF2_1.2px,transparent_1.2px)] [background-size:24px_24px] opacity-[0.14] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_45%,#000_70%,transparent_100%)]" />
-        
-        {/* Calming Center Ambient Glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] bg-gradient-to-tr from-[#00BAF2]/15 via-blue-100/30 to-transparent blur-3xl pointer-events-none rounded-full" />
+      </header>
 
-        <div className="relative max-w-5xl mx-auto space-y-7 z-10">
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.08] text-center">
-            <span className="block text-[#002970] whitespace-nowrap">
-              Your business runs.
-            </span>
-            <span className="block text-[#00BAF2] whitespace-nowrap drop-shadow-[0_4px_20px_rgba(0,186,242,0.25)]">
-              PayPulse watches.
-            </span>
+      {/* Hero Section */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 lg:px-12 relative z-10">
+        <section className="min-h-[calc(100vh-4.5rem)] flex flex-col justify-center items-center text-center max-w-3xl mx-auto space-y-6 pb-20 pt-4 -translate-y-5 sm:-translate-y-8">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/70 backdrop-blur-md border border-blue-200/70 text-xs font-bold text-[#002970] shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#00BAF2]" />
+            <span>Autonomous AI Retail Retention & Merchant Intelligence</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#002970] leading-tight">
+            Turn Raw POS Ledgers Into <br />
+            <span className="text-[#00BAF2]">Automatic Footfall & Profit</span>
           </h1>
 
-          <p className="text-base sm:text-lg md:text-xl text-slate-600 font-normal max-w-2xl mx-auto leading-relaxed">
-            Autonomous anomaly detection, instant merchant recovery proposals, and seamless payment operations.
-          </p>
-
-          <div className="pt-2">
-            <button
-              onClick={scrollToDashboard}
-              className="px-9 py-4 bg-[#002970] hover:bg-[#001D52] text-white rounded-full font-bold text-base md:text-lg transition-all duration-200 shadow-xl shadow-[#002970]/25 hover:shadow-2xl hover:-translate-y-0.5 inline-flex items-center space-x-2.5 cursor-pointer"
+          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+            <Link
+              href="/login"
+              className="w-full sm:w-auto px-7 py-3.5 bg-[#002970] hover:bg-[#001D52] text-white text-sm font-black rounded-2xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer active:scale-95"
             >
-              <span>See Live Demo</span>
-              <ChevronDown className="w-5 h-5 animate-bounce" />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 2: THE DASHBOARD */}
-      <section id="dashboard" className="min-h-screen py-20 px-6 lg:px-12 max-w-7xl mx-auto w-full">
-        <div className="mb-8 flex justify-between items-end">
-          <div>
-            <h2 className="text-3xl font-bold text-[#002970]">AI Operations Command</h2>
-            <p className="text-slate-500 mt-1">Autonomous monitoring active across transaction endpoints.</p>
-          </div>
-
-          {demoState === 'idle' && (
-            <button
-              onClick={triggerAnomaly}
-              className="flex items-center px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-medium transition-colors shadow-sm"
+              <span>Launch Dashboard</span>
+              <ArrowRight className="w-4 h-4 text-[#00BAF2]" />
+            </Link>
+            <a
+              href="#agents-explained"
+              className="w-full sm:w-auto px-6 py-3.5 bg-white/80 hover:bg-white backdrop-blur-md border border-slate-200 text-slate-700 text-sm font-bold rounded-2xl shadow-xs transition-colors text-center cursor-pointer"
             >
-              <Play className="w-4 h-4 mr-2" />
-              Trigger Anomaly Demo
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* LEFT: THE AGENT BRAIN */}
-          <div className="bg-[#002970] rounded-2xl overflow-hidden shadow-xl border border-slate-800 flex flex-col h-[450px]">
-            <div className="bg-[#001D52] px-5 py-3.5 flex justify-between items-center border-b border-slate-700/50">
-              <span className="text-slate-300 text-xs font-mono font-bold flex items-center space-x-2">
-                <Activity className="w-4 h-4 text-[#00BAF2] animate-pulse" />
-                <span>AGENT EXECUTION LOGS</span>
-              </span>
-              <span className="flex space-x-1.5">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
-              </span>
-            </div>
-
-            <div className="p-5 font-mono text-sm space-y-3 overflow-y-auto flex-1 text-slate-200">
-              {logs.map((log, index) => (
-                <div key={index} className="leading-relaxed">
-                  {log.includes('⚠️') ? <span className="text-amber-300 font-semibold">{log}</span> :
-                   log.includes('✅') || log.includes('🚀') ? <span className="text-emerald-400 font-semibold">{log}</span> :
-                   log}
-                </div>
-              ))}
-              {demoState === 'detecting' && (
-                <div className="flex space-x-2 items-center text-slate-400">
-                  <div className="w-2 h-2 bg-[#00BAF2] rounded-full animate-ping"></div>
-                  <span>Analyzing payload streams...</span>
-                </div>
-              )}
-            </div>
+              How The AI Agents Work ↓
+            </a>
           </div>
+        </section>
 
-          {/* RIGHT: MERCHANT COMMAND CENTER */}
-          <div className="flex flex-col min-h-[450px] bg-white rounded-2xl border border-slate-200 p-6 shadow-xl justify-center">
-            {demoState === 'idle' || demoState === 'detecting' ? (
-              <div className="text-center space-y-4 py-8">
-                <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto relative">
-                  <ShieldCheck className="w-10 h-10" />
-                  <div className="absolute inset-0 rounded-full border-2 border-emerald-400 animate-ping opacity-25"></div>
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800">All Systems Nominal</h3>
-                <p className="text-slate-500 max-w-sm mx-auto text-sm">
-                  PayPulse is actively monitoring transaction health. No action required.
-                </p>
-              </div>
-            ) : demoState === 'action_required' ? (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3 text-amber-600 bg-amber-50 p-4 rounded-xl border border-amber-200">
-                  <AlertCircle className="w-6 h-6 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm">Action Recommended</h4>
-                    <p className="text-xs text-amber-700">Drop in orders detected in last 30 minutes.</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
-                      <span>Conversion Drop</span>
-                      <TrendingDown className="w-4 h-4 text-rose-500" />
-                    </div>
-                    <p className="text-2xl font-extrabold text-slate-800">-34%</p>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <div className="flex justify-between items-center text-xs text-slate-500 mb-1">
-                      <span>Abandoned Carts</span>
-                      <PackageMinus className="w-4 h-4 text-amber-500" />
-                    </div>
-                    <p className="text-2xl font-extrabold text-slate-800">48 Items</p>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50/70 p-4 rounded-xl border border-blue-100 space-y-2">
-                  <h4 className="text-xs font-bold text-[#002970] flex items-center space-x-1.5">
-                    <ShieldCheck className="w-4 h-4 text-[#00BAF2]" />
-                    <span>Agent Recovery Strategy</span>
-                  </h4>
-                  <p className="text-slate-700 text-xs italic">
-                    "Craving a quick bite? Use code QUICK15 for 15% off next order."
-                  </p>
-                  <div className="text-xs text-slate-500 flex items-center space-x-1">
-                    <Send className="w-3 h-3 text-[#00BAF2]" />
-                    <span>Targeting 85 past afternoon buyers</span>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button className="flex-1 py-3 border border-slate-300 rounded-xl text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
-                    Edit Offer
-                  </button>
-                  <button
-                    onClick={approveAction}
-                    className="flex-1 py-3 bg-[#00BAF2] hover:bg-[#00a3d4] text-white rounded-xl text-sm font-semibold transition-colors shadow-md"
-                  >
-                    Approve & Broadcast
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center space-y-6 py-6">
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-10 h-10" />
-                </div>
-                <div>
-                  <h3 className="text-3xl font-bold text-slate-800">Strategy Executed!</h3>
-                  <p className="text-slate-600 text-sm mt-1">Snack promo successfully delivered to 85 customers.</p>
-                </div>
-
-                <div className="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-around items-center">
-                  <div className="text-center">
-                    <p className="text-xs text-slate-500 font-medium">Revenue Recovered</p>
-                    <p className="text-3xl font-extrabold text-emerald-600">₹1,500</p>
-                  </div>
-                  <div className="w-px h-10 bg-slate-200"></div>
-                  <div className="text-center">
-                    <p className="text-xs text-slate-500 font-medium">Conversions Restored</p>
-                    <p className="text-3xl font-extrabold text-[#002970]">+28%</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={resetToIdle}
-                  className="flex items-center mx-auto px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Resume Monitoring
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-{/* FOOTER SECTION */}
-      <footer className="w-full bg-[#001D52] text-slate-200 font-sans mt-auto border-t border-[#00BAF2]/30 shadow-inner">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5">
-          
-          {/* TOP SECTION: 4 COLUMNS */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-4 border-b border-white/10">
-            
-            {/* COLUMN 1: BRAND */}
-            <div className="space-y-2.5">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-7 h-7 bg-[#00BAF2] rounded-lg flex items-center justify-center shadow-md shadow-[#00BAF2]/25">
-                  <ShieldCheck className="text-white w-4 h-4" />
-                </div>
-                <span className="text-lg font-bold tracking-tight text-white">
-                  PayPulse
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed max-w-[240px]">
-                Intelligent payment monitoring and autonomous revenue recovery.
-              </p>
+        {/* Visual Multi-Agent Architecture */}
+        <section id="agents-explained" className="space-y-8 pt-16 pb-20 scroll-mt-20">
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-emerald-600" />
+              <span>Multi-Agent Architecture</span>
             </div>
-
-            {/* COLUMN 2: PRODUCT (Modes & Pricing Removed) */}
-            <div>
-              <h4 className="text-xs font-bold text-[#00BAF2] uppercase tracking-wider mb-2.5">
-                Product
-              </h4>
-              <ul className="space-y-2 text-xs font-medium text-slate-300">
-                {['How it works', 'Features'].map((item) => (
-                  <li key={item}>
-                    <a
-                      href={`#${item.toLowerCase().replace(/\s+/g, '-')}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        scrollToDashboard();
-                      }}
-                      className="hover:text-white transition-colors inline-block hover:translate-x-1 transform duration-150"
-                    >
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* COLUMN 3: COMPANY */}
-            <div>
-              <h4 className="text-xs font-bold text-[#00BAF2] uppercase tracking-wider mb-2.5">
-                Company
-              </h4>
-              <ul className="space-y-2 text-xs font-medium text-slate-300">
-                <li>
-                  <a
-                    href="#"
-                    onClick={scrollToTop}
-                    className="hover:text-white transition-colors inline-block hover:translate-x-1 transform duration-150 cursor-pointer"
-                  >
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className="hover:text-white transition-colors inline-block hover:translate-x-1 transform duration-150"
-                  >
-                    Careers
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* COLUMN 4: LEGAL & RIGHT-ALIGNED CONTACT SUPPORT */}
-            <div className="flex justify-between items-start gap-4">
-              <div className="shrink-0">
-                <h4 className="text-xs font-bold text-[#00BAF2] uppercase tracking-wider mb-2.5">
-                  Legal
-                </h4>
-                <ul className="space-y-2 text-xs font-medium text-slate-300">
-                  {['Privacy policy', 'Terms of service'].map((item) => (
-                    <li key={item}>
-                      <a
-                        href="#"
-                        onClick={(e) => e.preventDefault()}
-                        className="hover:text-white transition-colors inline-block hover:translate-x-1 transform duration-150 whitespace-nowrap"
-                      >
-                        {item}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Contact Support Button - Aligned with Privacy Policy row */}
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsSupportOpen(true)}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#00BAF2]/15 hover:bg-[#00BAF2]/25 border border-[#00BAF2]/40 hover:border-[#00BAF2] text-white rounded-full transition-all duration-150 shadow-sm group text-xs font-semibold cursor-pointer whitespace-nowrap translate-x-3 hover:translate-x-4"
-                >
-                  <Mail className="w-3.5 h-3.5 text-[#00BAF2] group-hover:scale-110 transition-transform" />
-                  <span>Contact Support</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* BOTTOM SECTION: COMPACT COPYRIGHT */}
-          <div className="pt-3 text-center">
-            <p className="text-[11px] text-slate-400">
-              © 2026 PayPulse. Made with precision in India.
+            <h2 className="text-2xl sm:text-3xl font-black text-[#002970]">
+              The 4 AI Agents Powering PayPulse
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
+              How autonomous agents collaborate asynchronously to safeguard merchant margins and drive customer lifetime value.
             </p>
           </div>
 
-        </div>
-      </footer>
-      
-      {/* CONTACT SUPPORT POPUP MODAL */}
-      {isSupportOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-            {/* Modal Header */}
-            <div className="bg-[#001D52] px-6 py-5 text-white flex justify-between items-center border-b border-[#00BAF2]/30">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 bg-[#00BAF2] rounded-lg flex items-center justify-center shadow-md">
-                  <Mail className="w-4 h-4 text-white" />
+            {/* Visual Card 1: Monitor Agent */}
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:border-[#00BAF2] transition-all flex flex-col justify-between space-y-5 group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-blue-50 text-[#00BAF2] rounded-2xl flex items-center justify-center border border-blue-100 shadow-2xs">
+                    <UploadCloud className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-blue-50 text-[#002970] border border-blue-200/60 rounded-full text-[10px] font-mono font-bold uppercase">
+                    Agent 1 · Monitor Sentinel
+                  </span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-base leading-tight text-white">Contact Support</h3>
-                  <p className="text-xs text-slate-300">How can we help you today?</p>
+                  <h3 className="text-base font-black text-[#002970]">The Monitor Agent</h3>
+                  <p className="text-xs font-semibold text-slate-500">Autonomous POS Ledger Sentinel</p>
                 </div>
               </div>
-              <button
-                onClick={() => setIsSupportOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              {/* Visual Component: Live POS Ledger Scanner */}
+              <div className="bg-slate-900 rounded-2xl p-3.5 text-white font-mono text-[11px] space-y-2.5 shadow-inner border border-slate-800">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800 pb-2">
+                  <span className="flex items-center space-x-1.5">
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-[#00BAF2]" />
+                    <span>store_ledger.csv</span>
+                  </span>
+                  <span className="text-emerald-400 flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Delta Active</span>
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                    <span className="text-slate-300">...8901 • Aarav S.</span>
+                    <span className="text-emerald-400 font-bold">Active Regular</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-rose-500/15 border border-rose-500/30 px-2.5 py-1.5 rounded-lg text-rose-300">
+                    <span className="flex items-center space-x-1.5">
+                      <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
+                      <span>...4567 • Diya C. (54d away)</span>
+                    </span>
+                    <span className="text-rose-400 font-bold uppercase text-[10px]">Flagged Churned</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-              
-              {/* Option Cards */}
-              <div className="space-y-2">
-                {[
-                  {
-                    title: 'Payment issue',
-                    desc: 'Payment failed, pending, or settlement problem'
-                  },
-                  {
-                    title: 'Account / Login',
-                    desc: 'Sign in, sign up, or account related issue'
-                  },
-                  {
-                    title: 'Dashboard / AI Agent',
-                    desc: 'Monitoring, alerts, campaigns, or dashboard issue'
-                  },
-                  {
-                    title: 'Other issue',
-                    desc: 'Anything else you need help with'
-                  }
-                ].map((opt) => (
-                  <div
-                    key={opt.title}
-                    onClick={() => setSelectedIssue(opt.title)}
-                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                      selectedIssue === opt.title
-                        ? 'border-[#00BAF2] bg-blue-50/50 shadow-sm ring-1 ring-[#00BAF2]'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    <p className={`text-xs font-bold ${selectedIssue === opt.title ? 'text-[#002970]' : 'text-slate-800'}`}>
-                      {opt.title}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {opt.desc}
-                    </p>
+            {/* Visual Card 2: Strategist Agent */}
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:border-purple-400 transition-all flex flex-col justify-between space-y-5 group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center border border-purple-100 shadow-2xs">
+                    <BrainCircuit className="w-5 h-5" />
                   </div>
-                ))}
-              </div>
-
-              {/* Issue Description Field */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                  Describe your issue
-                </label>
-                <textarea
-                  rows={3}
-                  value={issueDescription}
-                  onChange={(e) => setIssueDescription(e.target.value)}
-                  placeholder="Tell us what went wrong..."
-                  className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#00BAF2] focus:ring-1 focus:ring-[#00BAF2] bg-slate-50 resize-none text-slate-800"
-                />
-              </div>
-
-              {/* Send Request Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  alert('Thank you! Your request has been logged.');
-                  setIsSupportOpen(false);
-                  setIssueDescription('');
-                }}
-                className="w-full py-2.5 bg-[#002970] hover:bg-[#001D52] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <span>Send Request</span>
-                <Send className="w-3.5 h-3.5 text-[#00BAF2]" />
-              </button>
-
-              {/* Support Details Info Box */}
-              <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center text-[11px] text-slate-500 gap-1 bg-slate-50 p-2.5 rounded-xl">
+                  <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200/60 rounded-full text-[10px] font-mono font-bold uppercase">
+                    Agent 2 · Strategist Engine
+                  </span>
+                </div>
                 <div>
-                  <span className="font-semibold text-slate-700">Support Email: </span>
-                  <a 
-                    href="https://mail.google.com/mail/?view=cm&fs=1&to=paypulseagent@gmail.com&su=PayPulse%20Support%20Request" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#00BAF2] font-semibold hover:underline"
-                  >
-                    paypulseagent@gmail.com
-                  </a>
-                </div>
-                <div className="text-slate-400">
-                  Response time: <span className="text-emerald-600 font-medium">Within 24 hours</span>
+                  <h3 className="text-base font-black text-[#002970]">The Strategist Agent</h3>
+                  <p className="text-xs font-semibold text-slate-500">Unit-Economic Optimization & Copy Engine</p>
                 </div>
               </div>
 
+              {/* Visual Component: Gemini Prompt & Coupon Card */}
+              <div className="bg-gradient-to-br from-purple-50/80 to-indigo-50/50 rounded-2xl p-3.5 border border-purple-100 text-xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1 text-purple-700 text-[10px] font-bold">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Gemini Dynamic Sizing</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded-md border border-purple-200 text-purple-600 font-bold">
+                    Margin Safe: 68%
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-purple-100 shadow-2xs">
+                  <div>
+                    <div className="text-[10px] text-slate-400">Target Customer LTV</div>
+                    <div className="font-bold text-slate-800 text-xs">₹15,193 (High Patron)</div>
+                  </div>
+                  <div className="px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-mono font-black text-xs rounded-lg shadow-xs flex items-center space-x-1">
+                    <span>VIP20</span>
+                    <span className="text-purple-200">• 20% OFF</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 text-[10px] text-purple-900 font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                  <span>Personalized bilingual message ready (English + Hindi)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Card 3: HITL Gatekeeper */}
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:border-amber-400 transition-all flex flex-col justify-between space-y-5 group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center border border-amber-100 shadow-2xs">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-full text-[10px] font-mono font-bold uppercase">
+                    Agent 3 · LangGraph Interrupt
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#002970]">The Human-in-the-Loop Gatekeeper</h3>
+                  <p className="text-xs font-semibold text-slate-500">Governance & Merchant Control Boundary</p>
+                </div>
+              </div>
+
+              {/* Visual Component: State Machine Interrupt Card */}
+              <div className="bg-gradient-to-br from-amber-50/70 to-orange-50/40 rounded-2xl p-3.5 border border-amber-200/80 text-xs space-y-2.5">
+                <div className="flex items-center justify-between text-[10px] font-bold text-amber-800">
+                  <span className="flex items-center space-x-1.5">
+                    <PauseCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                    <span>Workflow Paused: interrupt()</span>
+                  </span>
+                  <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-amber-200 text-amber-700">
+                    Awaiting Decision
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-amber-100 shadow-2xs flex items-center justify-between">
+                  <div className="text-[11px]">
+                    <span className="font-bold text-slate-800">Rohan Mehta</span>
+                    <span className="text-slate-400 ml-1.5">(15% Comeback Offer)</span>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <span className="px-2.5 py-1 bg-slate-900 text-white text-[10px] font-bold rounded-lg flex items-center space-x-1 shadow-xs">
+                      <Check className="w-3 h-3 text-[#00BAF2]" />
+                      <span>Approve</span>
+                    </span>
+                    <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-lg">
+                      Skip
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-amber-900 font-medium">
+                  Zero unauthorized messages. Total merchant oversight maintained.
+                </p>
+              </div>
+            </div>
+
+            {/* Visual Card 4: Dispatcher & Feedback Agent */}
+            <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-slate-200/90 shadow-sm hover:border-emerald-400 transition-all flex flex-col justify-between space-y-5 group">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 shadow-2xs">
+                    <Send className="w-5 h-5" />
+                  </div>
+                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-[10px] font-mono font-bold uppercase">
+                    Agent 4 · Cloud Dispatcher
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#002970]">The Dispatcher & Feedback Agent</h3>
+                  <p className="text-xs font-semibold text-slate-500">Multi-Channel Delivery & Campaign Auditor</p>
+                </div>
+              </div>
+
+              {/* Visual Component: Live WhatsApp Preview & Supabase Sync */}
+              <div className="bg-slate-900 rounded-2xl p-3.5 text-white text-xs space-y-2.5 border border-slate-800 shadow-inner">
+                <div className="flex items-center justify-between text-[10px] border-b border-slate-800 pb-2">
+                  <span className="flex items-center space-x-1.5 text-emerald-400 font-bold">
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>WhatsApp Cloud API</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">Status: Delivered ✓✓</span>
+                </div>
+
+                <div className="bg-emerald-950/40 border border-emerald-500/20 p-2.5 rounded-xl space-y-1">
+                  <p className="text-[11px] text-emerald-100 leading-tight">
+                    "Namaste Rohan! We noticed it's been a while. Here is <strong>15% OFF</strong> on your next visit with coupon <strong>LOYAL15</strong>!"
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1">
+                  <span>Supabase Audit Log:</span>
+                  <span className="text-emerald-400 font-bold">CAMPAIGN_APPROVED</span>
+                </div>
+              </div>
             </div>
 
           </div>
-        </div>
-      )}
+        </section>
 
+        {/* Bottom Callout Banner */}
+        <section className="bg-gradient-to-r from-[#002970] to-[#001D52] text-white p-8 sm:p-10 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6 mb-20 relative overflow-hidden">
+          <div className="space-y-1 text-center sm:text-left relative z-10">
+            <h3 className="text-xl sm:text-2xl font-black tracking-tight">Experience PayPulse Live</h3>
+            <p className="text-xs sm:text-sm text-blue-200 max-w-md">
+              Upload your weekly ledger, observe real-time pipeline telemetry, and review retention campaigns.
+            </p>
+          </div>
+          <Link
+            href="/login"
+            className="px-6 py-3.5 bg-[#00BAF2] hover:bg-[#00a3d4] text-[#002970] text-xs font-black rounded-2xl shadow-md transition-transform active:scale-95 flex items-center space-x-2 shrink-0 cursor-pointer relative z-10"
+          >
+            <span>Launch Operator Dashboard</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </section>
+      </main>
+
+      {/* Professional Multi-Column Footer */}
+      <footer className="border-t border-slate-200/80 bg-white/80 backdrop-blur-lg text-slate-600 pt-14 pb-8 relative z-10">
+        <div className="max-w-7xl w-full mx-auto px-6 lg:px-12 space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-slate-100">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 bg-[#00BAF2] rounded-xl flex items-center justify-center shadow-xs">
+                  <Store className="text-white w-4 h-4" />
+                </div>
+                <span className="text-lg font-black tracking-tight text-[#002970]">PayPulse</span>
+              </div>
+              <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+                Autonomous AI retail intelligence and retention operating system. Converting raw transaction ledgers into dynamic retention campaigns and verifiable store profit.
+              </p>
+              <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-[11px] font-semibold text-emerald-800">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>All Agent Systems Operational</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <h4 className="font-black uppercase tracking-wider text-slate-900 text-[11px]">Architecture</h4>
+              <ul className="space-y-2 text-slate-500">
+                <li className="flex items-center space-x-1.5 hover:text-[#002970] transition-colors">
+                  <Cpu className="w-3.5 h-3.5 text-[#00BAF2]" />
+                  <span>LangGraph Orchestrator</span>
+                </li>
+                <li className="flex items-center space-x-1.5 hover:text-[#002970] transition-colors">
+                  <Database className="w-3.5 h-3.5 text-[#00BAF2]" />
+                  <span>Supabase / PostgreSQL</span>
+                </li>
+                <li className="flex items-center space-x-1.5 hover:text-[#002970] transition-colors">
+                  <Sparkles className="w-3.5 h-3.5 text-[#00BAF2]" />
+                  <span>Gemini Strategist Node</span>
+                </li>
+                <li className="flex items-center space-x-1.5 hover:text-[#002970] transition-colors">
+                  <Send className="w-3.5 h-3.5 text-[#00BAF2]" />
+                  <span>Meta WhatsApp Cloud API</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <h4 className="font-black uppercase tracking-wider text-slate-900 text-[11px]">Capabilities</h4>
+              <ul className="space-y-2 text-slate-500">
+                <li className="hover:text-[#002970] transition-colors">7-Day POS Ledger Ingestion</li>
+                <li className="hover:text-[#002970] transition-colors">Delta Churn Detection</li>
+                <li className="hover:text-[#002970] transition-colors">Dynamic Margin Sizing</li>
+                <li className="hover:text-[#002970] transition-colors">Human-in-the-Loop Gate</li>
+                <li className="hover:text-[#002970] transition-colors">Historical Performance Snapshots</li>
+              </ul>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <h4 className="font-black uppercase tracking-wider text-slate-900 text-[11px]">Security & Governance</h4>
+              <ul className="space-y-2 text-slate-500">
+                <li className="flex items-center space-x-1.5">
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Merchant-Gated Approval</span>
+                </li>
+                <li className="flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Immutable Audit Ledger</span>
+                </li>
+                <li className="flex items-center space-x-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Isolated Data Partitioning</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+            <p>© 2026 PayPulse Technologies Inc. All rights reserved.</p>
+            <div className="flex items-center space-x-6 text-slate-500">
+              <span className="hover:text-slate-700 cursor-pointer">Privacy Policy</span>
+              <span>•</span>
+              <span className="hover:text-slate-700 cursor-pointer">Terms of Service</span>
+              <span>•</span>
+              <span className="hover:text-slate-700 cursor-pointer">Security Protocol</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

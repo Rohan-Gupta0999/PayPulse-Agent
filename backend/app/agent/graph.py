@@ -42,9 +42,8 @@ async def strategist_node(state: dict):
     days = target.get("days_away", 45)
     customer_name = target.get("name", "Customer")
 
-    # Dynamic fallback defaults based on merchant business rules
-    discount = 20.0 if (spend >= 3500 or days >= 60) else 15.0
-    coupon = f"COMEBACK{int(discount)}"
+    from app.api.upload_routes import calculate_spend_based_discount
+    discount, coupon = calculate_spend_based_discount(spend)
 
     try:
         # YOUR EXISTING GEMINI LLM INVOCATION HERE

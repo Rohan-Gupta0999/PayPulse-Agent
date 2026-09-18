@@ -21,9 +21,21 @@ export interface StreamEventData {
 
 // ─── Upload Types ─────────────────────────────────────────────────────────────
 
+export interface NewCustomer {
+  id?: number;
+  name: string;
+  phone_number: string;
+  amount_spent: number;
+  visit_date: string;
+}
+
 export interface UploadSummary {
   total_rows: number;
   total_customers?: number;
+  regular_customers?: number;
+  new_customers?: number;
+  new_customers_list?: NewCustomer[];
+  repeat_visits?: number;
   inserted: number;
   updated: number;
   churned_flagged: number;
@@ -65,6 +77,8 @@ export interface KpiData {
   profit: number | null;
   weekly_capital: number;
   regular_customers: number;
+  new_customers?: number;
+  total_customers?: number;
   at_risk_customers: number;
 }
 
@@ -74,12 +88,16 @@ export interface WeekBreakdown {
   label: string;
   short_label: string;
   start_date: string;
-  end_date: string;
+  end_date?: string;
   kpis: {
     total_sales: number;
     profit: number | null;
+    weekly_capital?: number;
     regular_customers: number;
-    visits: number;
+    new_customers?: number;
+    total_customers?: number;
+    at_risk_customers?: number;
+    visits?: number;
   };
   graph_data: WeeklyGraphData;
 }
@@ -88,10 +106,32 @@ export interface UploadResult {
   status: string;
   summary: UploadSummary;
   kpis: KpiData;
+  current_week_id?: string;
   churned_customers: ChurnedCustomer[];
+  new_customers_list?: NewCustomer[];
   weekly_graph_data: WeeklyGraphData;   // Primary — from weekly_snapshots
   weeks_breakdown?: WeekBreakdown[];
   graph_data?: GraphData;               // Legacy, may be absent
+  daily_stats?: {
+    dates: string[];
+    sales: number[];
+    profit: number[];
+    visits: number[];
+  };
+  summary_kpis?: {
+    total_sales: number;
+    total_profit: number;
+    total_visits: number;
+    regular_count: number;
+    at_risk_count: number;
+  };
+  churn_candidate?: {
+    id: number;
+    name: string;
+    phone_number: string;
+    lifetime_spend: number;
+    days_away: number;
+  } | null;
 }
 
 // ─── Agent SSE Stream ─────────────────────────────────────────────────────────
@@ -180,4 +220,48 @@ export async function fetchPendingCampaigns(merchantId: number): Promise<Churned
   if (!response.ok) return [];
   const data = await response.json();
   return data.pending_customers ?? [];
+}
+
+/**
+ * Fetches previously uploaded weekly snapshots and KPI stats.
+ * Allows merchant to view historical weekly bar graphs immediately upon login.
+ */
+export async function fetchMerchantStats(merchantId: number): Promise<{
+  has_data: boolean;
+  latest_kpis: KpiData | null;
+  weekly_graph_data: WeeklyGraphData;
+  weeks_breakdown: WeekBreakdown[];
+  current_week_id?: string;
+}> {
+  const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/stats`);
+  if (!response.ok) throw new Error("Failed to fetch merchant stats");
+  return await response.json();
+}
+
+// ─── WhatsApp Welcome Greetings ──────────────────────────────────────────────
+
+export async function sendWelcomeMessage(
+  merchantId: number,
+  customer: { customer_id?: number; customer_name: string; phone_number: string; amount_spent: number }
+): Promise<{ status: string; customer_name: string; phone_number: string }> {
+  const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/send-welcome`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(customer),
+  });
+  if (!response.ok) throw new Error(`Failed to send welcome message: ${response.statusText}`);
+  return await response.json();
+}
+
+export async function sendBulkWelcomeMessages(
+  merchantId: number,
+  customers: Array<{ customer_id?: number; customer_name: string; phone_number: string; amount_spent: number }>
+): Promise<{ status: string; count: number; results: any[] }> {
+  const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/send-welcome-bulk`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ customers }),
+  });
+  if (!response.ok) throw new Error(`Bulk welcome dispatch failed: ${response.statusText}`);
+  return await response.json();
 }

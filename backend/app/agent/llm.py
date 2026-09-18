@@ -37,6 +37,12 @@ async def generate_guardrailed_offer(customer_name: str, days_inactive: int, tot
     Business Guardrails:
     - Minimum discount: 5%
     - Maximum discount allowed: {settings.MAX_DISCOUNT_THRESHOLD}%
+    - Calculate discount strictly according to customer lifetime spend:
+      * Spend Under ₹5,000: 10% (Coupon: COMEBACK10)
+      * Spend ₹5,000 - ₹10,000: 12% (Coupon: LOYAL12)
+      * Spend ₹10,000 - ₹14,000: 15% (Coupon: LOYAL15)
+      * Spend ₹14,000 - ₹17,000: 18% (Coupon: PREMIUM18)
+      * Spend Over ₹17,000: 20% (Coupon: VIP20)
     - Output strictly formatted structured data.
     """
 

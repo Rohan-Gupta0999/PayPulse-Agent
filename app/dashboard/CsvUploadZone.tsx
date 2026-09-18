@@ -1,61 +1,53 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { UploadResult } from "../agentService";
+import { Upload, CheckCircle2, AlertCircle, Loader2, MessageCircle, Sparkles } from "lucide-react";
+import { UploadResult, NewCustomer, sendWelcomeMessage, sendBulkWelcomeMessages } from "../agentService";
 
 interface CsvUploadZoneProps {
   merchantId: number;
   lang: "EN" | "HI";
   t: Record<string, string>;
-  weeklyCapital: string;           // Passed from parent (header input)
+  weeksCapital: string; // Accepts from Navbar
   onUploadComplete: (result: UploadResult) => void;
 }
 
 type UploadState = "idle" | "uploading" | "success" | "error";
 
-export default function CsvUploadZone({
-  merchantId,
-  lang,
-  t,
-  weeklyCapital,
-  onUploadComplete,
-}: CsvUploadZoneProps) {
+export default function CsvUploadZone({ merchantId, lang, t, weeksCapital, onUploadComplete }: CsvUploadZoneProps) {
   const [state, setState] = useState<UploadState>("idle");
   const [summary, setSummary] = useState<UploadResult["summary"] | null>(null);
+  const [newCustomers, setNewCustomers] = useState<NewCustomer[]>([]);
+  const [showNewCustomers, setShowNewCustomers] = useState(false);
+  const [sentKeys, setSentKeys] = useState<Set<string>>(new Set());
+  const [sendingKeys, setSendingKeys] = useState<Set<string>>(new Set());
+  const [isSendingAll, setIsSendingAll] = useState(false);
+  const [allSent, setAllSent] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
     if (!file.name.endsWith(".csv")) {
-      setErrorMsg(lang === "EN" ? "Only .csv files are allowed." : "केवल .csv फ़ाइलें मान्य हैं।");
-      setState("error");
-      return;
+      setErrorMsg("Only .csv files are allowed.");
+      setState("error"); return;
     }
-
     setState("uploading");
     setErrorMsg("");
 
     const formData = new FormData();
     formData.append("file", file);
-    // Send the merchant's weekly capital alongside the file
-    const capitalValue = parseFloat(weeklyCapital.replace(/,/g, "")) || 0;
-    formData.append("weekly_capital", String(capitalValue));
+    // Send typed capital to backend to persist
+    if (weeksCapital && !isNaN(parseFloat(weeksCapital))) {
+      formData.append("weekly_capital", weeksCapital);
+    }
 
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/upload/ledger/${merchantId}`,
-        { method: "POST", body: formData }
-      );
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || t.uploadError);
-      }
-
+      const res = await fetch(`http://localhost:8000/api/upload/ledger/${merchantId}`, { method: "POST", body: formData });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || t.uploadError);
+      
       const result: UploadResult = await res.json();
       setSummary(result.summary);
+      setNewCustomers(result.new_customers_list || []);
       setState("success");
       onUploadComplete(result);
     } catch (e: any) {
@@ -64,133 +56,71 @@ export default function CsvUploadZone({
     }
   };
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
   const reset = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setState("idle");
-    setSummary(null);
-    setErrorMsg("");
+    e.stopPropagation(); setState("idle"); setSummary(null); setNewCustomers([]);
+    setShowNewCustomers(false); setSentKeys(new Set()); setSendingKeys(new Set());
+    setIsSendingAll(false); setAllSent(false); setErrorMsg("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const containerCls = [
-    "relative border-2 border-dashed rounded-2xl p-8 text-center transition-all",
-    state !== "uploading" ? "cursor-pointer" : "cursor-wait",
-    isDragOver
-      ? "border-[#00BAF2] bg-blue-50 scale-[1.01]"
-      : state === "success"
-      ? "border-emerald-400 bg-emerald-50/50"
-      : state === "error"
-      ? "border-rose-400 bg-rose-50/50"
-      : "border-slate-300 bg-white hover:border-[#00BAF2] hover:bg-blue-50/20",
-  ].join(" ");
+  const handleSendBulk = async () => {
+    if (newCustomers.length === 0) return;
+    setIsSendingAll(true);
+    try {
+      await sendBulkWelcomeMessages(merchantId, newCustomers.map(c => ({ customer_id: c.id, customer_name: c.name, phone_number: c.phone_number, amount_spent: c.amount_spent })));
+      setAllSent(true);
+      setSentKeys(new Set(newCustomers.map((c, i) => String(c.id || i))));
+    } catch (err) {} finally { setIsSendingAll(false); }
+  };
+
+  const totalCustomerVisits = summary?.total_customers ?? ((summary?.regular_customers ?? 0) + newCustomers.length);
+  const newCount = summary?.new_customers ?? newCustomers.length;
+  const regularCount = Math.max(0, totalCustomerVisits - newCount);
 
   return (
     <div
-      className={containerCls}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragLeave={() => setIsDragOver(false)}
+      className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${state !== "uploading" && state !== "success" ? "cursor-pointer border-slate-300 bg-white hover:border-[#00BAF2]" : state === "success" ? "border-emerald-400 bg-emerald-50/40 cursor-default" : "border-slate-300 bg-white cursor-default"}`}
+      onDrop={(e) => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
+      onDragOver={(e) => e.preventDefault()}
       onClick={() => state === "idle" && fileInputRef.current?.click()}
     >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFile(file);
-        }}
-      />
+      <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }} />
 
-      {/* ── IDLE ── */}
       {state === "idle" && (
         <>
-          <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
-            <Upload className="w-7 h-7 text-[#00BAF2]" />
-          </div>
+          <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100"><Upload className="w-7 h-7 text-[#00BAF2]" /></div>
           <p className="text-base font-bold text-[#002970]">{t.uploadTitle}</p>
-          <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">{t.uploadSubtitle}</p>
-          <span className="mt-5 inline-block px-5 py-2.5 bg-[#002970] text-white text-xs font-bold rounded-xl shadow-sm">
-            {t.uploadBtn}
-          </span>
-          <p className="text-[10px] text-slate-400 mt-4 font-mono">{t.uploadHint}</p>
+          <p className="text-xs text-slate-500 mt-1">{t.uploadSubtitle}</p>
+          <span className="mt-5 inline-block px-5 py-2.5 bg-[#002970] text-white text-xs font-bold rounded-xl shadow-sm">{t.uploadBtn}</span>
         </>
       )}
 
-      {/* ── UPLOADING ── */}
       {state === "uploading" && (
-        <>
-          <Loader2 className="w-12 h-12 text-[#00BAF2] mx-auto mb-4 animate-spin" />
-          <p className="text-base font-bold text-[#002970]">
-            {lang === "EN" ? "Reading your ledger..." : "खाता-बही पढ़ी जा रही है..."}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">
-            {lang === "EN" ? "Updating customer records in Supabase" : "ग्राहक रिकॉर्ड अपडेट हो रहे हैं"}
-          </p>
-        </>
+        <><Loader2 className="w-12 h-12 text-[#00BAF2] mx-auto mb-4 animate-spin" /><p className="text-base font-bold text-[#002970]">Reading your ledger...</p></>
       )}
 
-      {/* ── SUCCESS ── */}
       {state === "success" && summary && (
-        <>
-          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+        <div onClick={(e) => e.stopPropagation()}>
+          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
           <p className="text-base font-bold text-emerald-700">{t.uploadSuccess}</p>
-          {/* Only show Visiting Customers + Need Outreach — perfectly matched with upper metrics */}
-          <div className="flex justify-center gap-12 mt-4">
-            <div className="text-center">
-              <span className="text-2xl font-black text-slate-800">{summary.total_customers ?? summary.total_rows}</span>
-              <p className="text-[10px] text-slate-500 uppercase font-bold mt-0.5">
-                {lang === "EN" ? "Visiting Customers" : "आए ग्राहक"}
-              </p>
-            </div>
-            <div className="text-center">
-              <span className="text-2xl font-black text-emerald-600">{summary.churned_flagged}</span>
-              <p className="text-[10px] text-slate-500 uppercase font-bold mt-0.5">
-                {lang === "EN" ? "Need Outreach" : "संपर्क ज़रूरी"}
-              </p>
-            </div>
+          <div className="mt-3 inline-flex items-center gap-2 px-5 py-2 bg-white border border-slate-200 rounded-full text-xs font-semibold shadow-xs">
+            <span><strong className="text-slate-900">{totalCustomerVisits}</strong> {lang === "EN" ? "Total Customers" : "कुल ग्राहक"}</span><span className="text-slate-300">•</span>
+            <span><strong className="text-emerald-600">{newCount}</strong> {lang === "EN" ? "New Customers" : "नए ग्राहक"}</span><span className="text-slate-300">•</span>
+            <span><strong className="text-[#002970]">{regularCount}</strong> {lang === "EN" ? "Regular Customers" : "नियमित ग्राहक"}</span>
           </div>
-          {summary.churned_flagged === 0 && (
-            <p className="text-xs text-slate-500 mt-4 bg-slate-50 px-4 py-2 rounded-xl inline-block">
-              {lang === "EN"
-                ? "✅ All high-value customers visited recently. No outreach needed."
-                : "✅ सभी प्रमुख ग्राहक हाल ही में आए हैं।"}
-            </p>
+          {newCustomers.length > 0 && (
+            <div className="mt-4 border-t border-slate-100 pt-4 flex flex-col items-center">
+              <button onClick={handleSendBulk} disabled={isSendingAll || allSent} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 ${allSent ? "bg-emerald-100 text-emerald-800" : "bg-emerald-600 text-white"}`}>
+                {isSendingAll ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Sending...</span></> : allSent ? <><CheckCircle2 className="w-3.5 h-3.5" /><span>Sent ✅</span></> : <><MessageCircle className="w-3.5 h-3.5" /><span>Send WhatsApp Greeting to {newCount} New Customers</span></>}
+              </button>
+            </div>
           )}
-          <button onClick={reset} className="mt-4 text-[11px] text-slate-400 underline hover:text-slate-600 transition-colors">
-            {lang === "EN" ? "Upload a different file" : "दूसरी फ़ाइल अपलोड करें"}
-          </button>
-        </>
+          <div className="mt-4"><button onClick={reset} className="text-[11px] text-slate-400 underline">Upload a different file</button></div>
+        </div>
       )}
 
-      {/* ── ERROR ── */}
       {state === "error" && (
-        <>
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <p className="text-base font-bold text-rose-700">{t.uploadError}</p>
-          {errorMsg && (
-            <p className="text-xs text-rose-500 mt-1 max-w-sm mx-auto font-mono">{errorMsg}</p>
-          )}
-          <button
-            onClick={reset}
-            className="mt-5 inline-block px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl shadow-sm hover:bg-rose-700 transition-colors"
-          >
-            {lang === "EN" ? "Try Again" : "दोबारा कोशिश करें"}
-          </button>
-        </>
+        <><AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" /><p className="text-base font-bold text-rose-700">{errorMsg}</p><button onClick={reset} className="mt-5 px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl">Try Again</button></>
       )}
     </div>
   );
