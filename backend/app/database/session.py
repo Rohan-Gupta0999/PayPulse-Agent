@@ -15,6 +15,8 @@ if os.path.exists(dotenv_path):
 else:
     load_dotenv()
 
+DEFAULT_SUPABASE_URL = "postgresql+asyncpg://postgres.riklbrwmvgavtxixvnoq:Py8RNEgCXn6JoDPD@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres"
+
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 # Strip any surrounding quotes if present
@@ -23,10 +25,9 @@ if (DATABASE_URL.startswith('"') and DATABASE_URL.endswith('"')) or (
 ):
     DATABASE_URL = DATABASE_URL[1:-1].strip()
 
-if not DATABASE_URL:
-    raise ValueError(
-        "DATABASE_URL is missing or empty. Check backend/.env"
-    )
+# If DATABASE_URL is missing or is Railway's auto-generated empty DB, fallback to Supabase
+if not DATABASE_URL or "railway.internal" in DATABASE_URL or "rlwy.net" in DATABASE_URL:
+    DATABASE_URL = DEFAULT_SUPABASE_URL
 
 # Ensure asyncpg driver dialect is used
 if DATABASE_URL.startswith("postgres://"):

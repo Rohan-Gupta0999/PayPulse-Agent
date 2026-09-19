@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {
   listenToAgent, UploadResult, WeeklyGraphData, KpiData,
-  ChurnedCustomer, bulkApproveOffers, WeekBreakdown, fetchMerchantStats, API_BASE
+  ChurnedCustomer, bulkApproveOffers, WeekBreakdown, fetchMerchantStats, API_BASE, getApiBase
 } from '../agentService';
 import CsvUploadZone from './CsvUploadZone';
 
@@ -370,7 +370,7 @@ export default function MerchantDashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const ledgerRes = await fetch(`${API_BASE}/api/merchant/1/campaigns`);
+      const ledgerRes = await fetch(`${getApiBase()}/api/merchant/1/campaigns`);
       if (ledgerRes.ok) {
         const ledgerData = await ledgerRes.json();
         const formattedLogs: AuditLedgerItem[] = (ledgerData.campaigns || [])

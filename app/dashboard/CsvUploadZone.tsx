@@ -14,7 +14,7 @@ import {
   Send,
   Loader2
 } from "lucide-react";
-import { UploadResult, NewCustomer, sendBulkWelcomeMessages, API_BASE } from "../agentService";
+import { UploadResult, NewCustomer, sendBulkWelcomeMessages, API_BASE, getApiBase } from "../agentService";
 
 interface CsvUploadZoneProps {
   merchantId: number;
@@ -92,7 +92,7 @@ export default function CsvUploadZone({
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${API_BASE}/api/upload/ledger/${merchantId}`, {
+      const res = await fetch(`${getApiBase()}/api/upload/ledger/${merchantId}`, {
         method: "POST",
         body: formData,
       });

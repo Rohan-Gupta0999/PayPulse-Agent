@@ -1,8 +1,39 @@
 // ─── Dynamic API Base URL ───────────────────────────────────────────────────
 
-export const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"
-).replace(/\/$/, "");
+export function getApiBase(): string {
+  let url = (process.env.NEXT_PUBLIC_API_BASE_URL || "").trim();
+
+  if (!url) {
+    const isBrowser = typeof window !== "undefined";
+    const isLocalhost = isBrowser && (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".local")
+    );
+    const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+
+    if (isBrowser && !isLocalhost) {
+      url = "https://paypulse-agent-production.up.railway.app";
+    } else if (isProd && !isLocalhost) {
+      url = "https://paypulse-agent-production.up.railway.app";
+    } else {
+      url = "http://127.0.0.1:8000";
+    }
+  }
+
+  // Ensure scheme is present (e.g. if user set 'paypulse-agent-production.up.railway.app')
+  if (!/^https?:\/\//i.test(url)) {
+    if (url.startsWith("localhost") || url.startsWith("127.0.0.1")) {
+      url = `http://${url}`;
+    } else {
+      url = `https://${url}`;
+    }
+  }
+
+  return url.replace(/\/$/, "");
+}
+
+export const API_BASE = getApiBase();
 
 // ─── Agent Stream Types ─────────────────────────────────────────────────────
 
@@ -151,9 +182,10 @@ export function listenToAgent(
   onError?: (err: any) => void,
   customerId?: number
 ): () => void {
+  const base = getApiBase();
   const url = customerId
-    ? `${API_BASE}/api/agent/stream/${merchantId}?customer_id=${customerId}`
-    : `${API_BASE}/api/agent/stream/${merchantId}`;
+    ? `${base}/api/agent/stream/${merchantId}?customer_id=${customerId}`
+    : `${base}/api/agent/stream/${merchantId}`;
 
   const eventSource = new EventSource(url);
 
@@ -186,7 +218,7 @@ export function listenToAgent(
 // ─── Approval Decision (single) ─────────────────────────────────────────────
 
 export async function sendApprovalDecision(threadId: string, action: "APPROVED" | "REJECTED") {
-  const response = await fetch(`${API_BASE}/api/agent/approve`, {
+  const response = await fetch(`${getApiBase()}/api/agent/approve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ thread_id: threadId, action }),
@@ -202,7 +234,7 @@ export async function bulkApproveOffers(
   campaignIds: number[],
   action: "APPROVED" | "REJECTED" = "APPROVED"
 ): Promise<{ status: string; updated: number }> {
-  const response = await fetch(`${API_BASE}/api/agent/bulk-approve`, {
+  const response = await fetch(`${getApiBase()}/api/agent/bulk-approve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ merchant_id: merchantId, campaign_ids: campaignIds, action }),
@@ -212,7 +244,7 @@ export async function bulkApproveOffers(
 }
 
 export async function fetchPendingCampaigns(merchantId: number): Promise<ChurnedCustomer[]> {
-  const response = await fetch(`${API_BASE}/api/agent/pending/${merchantId}`);
+  const response = await fetch(`${getApiBase()}/api/agent/pending/${merchantId}`);
   if (!response.ok) return [];
   const data = await response.json();
   return data.pending_customers ?? [];
@@ -223,7 +255,7 @@ export async function fetchMerchantStats(merchantId: number = 1): Promise<{
   current_kpis?: KpiData;
 } | null> {
   try {
-    const response = await fetch(`${API_BASE}/api/merchant/${merchantId}/stats`);
+    const response = await fetch(`${getApiBase()}/api/merchant/${merchantId}/stats`);
     if (!response.ok) {
       console.warn(`Merchant stats endpoint returned status ${response.status}`);
       return { weeks_breakdown: [] };
@@ -241,7 +273,7 @@ export async function sendWelcomeMessage(
   merchantId: number,
   customer: { customer_id?: number; customer_name: string; phone_number: string; amount_spent: number }
 ): Promise<{ status: string; customer_name: string; phone_number: string }> {
-  const response = await fetch(`${API_BASE}/api/merchant/${merchantId}/send-welcome`, {
+  const response = await fetch(`${getApiBase()}/api/merchant/${merchantId}/send-welcome`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(customer),
@@ -260,7 +292,7 @@ export async function sendBulkWelcomeMessages(
   }>,
   testPhone?: string
 ) {
-  const res = await fetch(`${API_BASE}/api/agent/welcome-bulk`, {
+  const res = await fetch(`${getApiBase()}/api/agent/welcome-bulk`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
