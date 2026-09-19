@@ -5,12 +5,7 @@ const nextConfig = {
     unoptimized: true,
   },
   typescript: {
-    // Allows production builds to successfully complete even if there are type errors
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    // Skips ESLint checks during production builds
-    ignoreDuringBuilds: true,
   },
 };
 
