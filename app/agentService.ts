@@ -1,4 +1,10 @@
-// ─── Agent Stream Types ───────────────────────────────────────────────────────
+// ─── Dynamic API Base URL ───────────────────────────────────────────────────
+
+export const API_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"
+).replace(/\/$/, "");
+
+// ─── Agent Stream Types ─────────────────────────────────────────────────────
 
 export interface AgentOfferPayload {
   merchant_id: number;
@@ -19,7 +25,7 @@ export interface StreamEventData {
   message?: string;
 }
 
-// ─── Upload Types ─────────────────────────────────────────────────────────────
+// ─── Upload Types ───────────────────────────────────────────────────────────
 
 export interface NewCustomer {
   id?: number;
@@ -48,7 +54,6 @@ export interface ChurnedCustomer {
   phone_number: string;
   total_spend: number;
   days_away: number;
-  // Pre-generated offer fields (set by upload_routes.py)
   campaign_id?: number;
   thread_id?: string;
   discount?: number;
@@ -65,7 +70,7 @@ export interface WeeklyGraphData {
   profit: number[];   // profit per week
 }
 
-/** Legacy monthly graph data (kept for backwards compat, no longer primary). */
+/** Legacy monthly graph data (kept for backwards compat). */
 export interface GraphData {
   months: string[];
   visits: number[];
@@ -109,9 +114,9 @@ export interface UploadResult {
   current_week_id?: string;
   churned_customers: ChurnedCustomer[];
   new_customers_list?: NewCustomer[];
-  weekly_graph_data: WeeklyGraphData;   // Primary — from weekly_snapshots
+  weekly_graph_data: WeeklyGraphData;
   weeks_breakdown?: WeekBreakdown[];
-  graph_data?: GraphData;               // Legacy, may be absent
+  graph_data?: GraphData;
   daily_stats?: {
     dates: string[];
     sales: number[];
@@ -134,11 +139,10 @@ export interface UploadResult {
   } | null;
 }
 
-// ─── Agent SSE Stream ─────────────────────────────────────────────────────────
+// ─── Agent SSE Stream ───────────────────────────────────────────────────────
 
 /**
  * Connects to the FastAPI backend SSE endpoint to listen to the agent in real time.
- * Used purely for the "Live AI Feed" telemetry panel (cosmetic).
  */
 export function listenToAgent(
   merchantId: number,
@@ -148,8 +152,8 @@ export function listenToAgent(
   customerId?: number
 ): () => void {
   const url = customerId
-    ? `http://localhost:8000/api/agent/stream/${merchantId}?customer_id=${customerId}`
-    : `http://localhost:8000/api/agent/stream/${merchantId}`;
+    ? `${API_BASE}/api/agent/stream/${merchantId}?customer_id=${customerId}`
+    : `${API_BASE}/api/agent/stream/${merchantId}`;
 
   const eventSource = new EventSource(url);
 
@@ -179,10 +183,10 @@ export function listenToAgent(
   return () => eventSource.close();
 }
 
-// ─── Approval Decision (single) ───────────────────────────────────────────────
+// ─── Approval Decision (single) ─────────────────────────────────────────────
 
 export async function sendApprovalDecision(threadId: string, action: "APPROVED" | "REJECTED") {
-  const response = await fetch("http://localhost:8000/api/agent/approve", {
+  const response = await fetch(`${API_BASE}/api/agent/approve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ thread_id: threadId, action }),
@@ -191,18 +195,14 @@ export async function sendApprovalDecision(threadId: string, action: "APPROVED" 
   return await response.json();
 }
 
-// ─── Bulk Approval ────────────────────────────────────────────────────────────
+// ─── Bulk Approval ──────────────────────────────────────────────────────────
 
-/**
- * Approves (or rejects) ALL pending campaigns in one click.
- * Called when merchant presses "Send Offers to All X Customers".
- */
 export async function bulkApproveOffers(
   merchantId: number,
   campaignIds: number[],
   action: "APPROVED" | "REJECTED" = "APPROVED"
 ): Promise<{ status: string; updated: number }> {
-  const response = await fetch("http://localhost:8000/api/agent/bulk-approve", {
+  const response = await fetch(`${API_BASE}/api/agent/bulk-approve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ merchant_id: merchantId, campaign_ids: campaignIds, action }),
@@ -211,27 +211,19 @@ export async function bulkApproveOffers(
   return await response.json();
 }
 
-/**
- * Fetches all PENDING_APPROVAL campaigns from the DB.
- * Used on page refresh to restore the outreach queue.
- */
 export async function fetchPendingCampaigns(merchantId: number): Promise<ChurnedCustomer[]> {
-  const response = await fetch(`http://localhost:8000/api/agent/pending/${merchantId}`);
+  const response = await fetch(`${API_BASE}/api/agent/pending/${merchantId}`);
   if (!response.ok) return [];
   const data = await response.json();
   return data.pending_customers ?? [];
 }
 
-/**
- * Fetches previously uploaded weekly snapshots and KPI stats.
- * Allows merchant to view historical weekly bar graphs immediately upon login.
- */
 export async function fetchMerchantStats(merchantId: number = 1): Promise<{
   weeks_breakdown: WeekBreakdown[];
   current_kpis?: KpiData;
 } | null> {
   try {
-    const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/stats`);
+    const response = await fetch(`${API_BASE}/api/merchant/${merchantId}/stats`);
     if (!response.ok) {
       console.warn(`Merchant stats endpoint returned status ${response.status}`);
       return { weeks_breakdown: [] };
@@ -243,13 +235,13 @@ export async function fetchMerchantStats(merchantId: number = 1): Promise<{
   }
 }
 
-// ─── WhatsApp Welcome Greetings ──────────────────────────────────────────────
+// ─── WhatsApp Welcome Greetings ────────────────────────────────────────────
 
 export async function sendWelcomeMessage(
   merchantId: number,
   customer: { customer_id?: number; customer_name: string; phone_number: string; amount_spent: number }
 ): Promise<{ status: string; customer_name: string; phone_number: string }> {
-  const response = await fetch(`http://localhost:8000/api/merchant/${merchantId}/send-welcome`, {
+  const response = await fetch(`${API_BASE}/api/merchant/${merchantId}/send-welcome`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(customer),
@@ -268,7 +260,7 @@ export async function sendBulkWelcomeMessages(
   }>,
   testPhone?: string
 ) {
-  const res = await fetch("http://localhost:8000/api/agent/welcome-bulk", {
+  const res = await fetch(`${API_BASE}/api/agent/welcome-bulk`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

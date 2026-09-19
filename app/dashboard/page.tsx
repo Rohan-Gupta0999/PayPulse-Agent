@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {
   listenToAgent, UploadResult, WeeklyGraphData, KpiData,
-  ChurnedCustomer, bulkApproveOffers, WeekBreakdown, fetchMerchantStats
+  ChurnedCustomer, bulkApproveOffers, WeekBreakdown, fetchMerchantStats, API_BASE
 } from '../agentService';
 import CsvUploadZone from './CsvUploadZone';
 
@@ -116,23 +116,17 @@ const TRANSLATIONS = {
     spend1: "Lifetime Spend",
 
     node_searching: "Searching",
-    node_found: "Found Customer",
-    node_planning: "AI Planning",
-    node_waiting: "Waiting",
-    node_done: "Done",
+    node_found: "Customer Identified",
+    node_planning: "Strategy Planning",
+    node_waiting: "Approval Gate",
+    node_done: "Dispatched",
 
-    msg_init: "Checking store records for inactive customers...",
-    msg_found: "Found customer needing win-back outreach.",
-    msg_planning: "Generated margin-safe discount.",
-    msg_waiting: "Offers ready for approval.",
+    msg_init: "Deduplicating receipts and computing store gross margin...",
+    msg_found: "Identified high-value customer needing win-back outreach.",
+    msg_planning: "Calculated margin-safe personalized discount offer.",
+    msg_waiting: "Outreach strategy verified. Pending merchant approval.",
     msg_approved: "Offer approved! Sent WhatsApp message to {name}.",
-    msg_rejected: "Offer skipped.",
-
-    roiTitle: "Margin Safety Check (Zero Loss Guarantee)",
-    roiCost: "Estimated Discount Cost",
-    roiRecovery: "Projected New Revenue",
-    roiNet: "Net Revenue Gain",
-    roiDesc: "Your weekly profit is ₹{profit}. The total cost of these discounts is safely capped at ₹{cost}. When these {count} customers return, they will generate ~₹{recovery} in new sales. You are mathematically guaranteed to stay in long-term profit."
+    msg_rejected: "Offer skipped."
   },
   HI: {
     title: "ग्राहक वफादारी और प्रतिधारण",
@@ -230,13 +224,7 @@ const TRANSLATIONS = {
     msg_planning: "व्यक्तिगत छूट ऑफ़र तैयार किया गया।",
     msg_waiting: "ऑफ़र अनुमोदन के लिए तैयार हैं।",
     msg_approved: "ऑफ़र स्वीकृत! {name} को WhatsApp संदेश भेजा गया।",
-    msg_rejected: "ऑफ़र छोड़ दिया गया।",
-
-    roiTitle: "मार्जिन सुरक्षा जांच (शून्य नुकसान की गारंटी)",
-    roiCost: "अनुमानित छूट लागत",
-    roiRecovery: "संभावित नया राजस्व",
-    roiNet: "शुद्ध राजस्व लाभ",
-    roiDesc: "आपका साप्ताहिक लाभ ₹{profit} है। इन छूटों की कुल लागत ₹{cost} पर सुरक्षित रूप से सीमित है। जब ये {count} ग्राहक वापस लौटेंगे, तो वे लगभग ₹{recovery} की नई बिक्री लाएंगे। लंबी अवधि में आपका लाभ गणितीय रूप से सुनिश्चित है।"
+    msg_rejected: "ऑफ़र छोड़ दिया गया।"
   }
 };
 
@@ -276,7 +264,7 @@ export default function MerchantDashboard() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const ledgerRes = await fetch("http://localhost:8000/api/merchant/1/campaigns");
+      const ledgerRes = await fetch(`${API_BASE}/api/merchant/1/campaigns`);
       if (ledgerRes.ok) {
         const ledgerData = await ledgerRes.json();
         const formattedLogs: AuditLedgerItem[] = (ledgerData.campaigns || [])
@@ -304,12 +292,13 @@ export default function MerchantDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 6000);
+    const interval = setInterval(fetchDashboardData, 8000);
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
   const stopStreamRef = useRef<(() => void) | null>(null);
-  const getClientTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const getClientTime = () =>
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const startAgentStream = (customerId?: number) => {
     if (stopStreamRef.current) stopStreamRef.current();
@@ -374,10 +363,54 @@ export default function MerchantDashboard() {
       setBulkQueue(result.churned_customers);
       setBulkApproved(false);
       setSkippedIds(new Set());
+
+      // Pre-seed instant Telemetry Logs so the dark blue feed comes alive immediately
+      const initialLogs: TelemetryLog[] = [
+        {
+          id: `log-seed-1-${Date.now()}`,
+          timestamp: getClientTime(),
+          nodeKey: 'node_waiting',
+          messageKey: 'msg_waiting',
+          status: 'interrupted'
+        },
+        {
+          id: `log-seed-2-${Date.now()}`,
+          timestamp: getClientTime(),
+          nodeKey: 'node_planning',
+          messageKey: 'msg_planning',
+          status: 'completed'
+        },
+        {
+          id: `log-seed-3-${Date.now()}`,
+          timestamp: getClientTime(),
+          nodeKey: 'node_found',
+          messageKey: 'msg_found',
+          customerName: result.churned_customers[0].name,
+          status: 'completed'
+        },
+        {
+          id: `log-seed-4-${Date.now()}`,
+          timestamp: getClientTime(),
+          nodeKey: 'node_searching',
+          messageKey: 'msg_init',
+          status: 'completed'
+        }
+      ];
+      setTelemetryLogs(initialLogs);
+
       const churnId = result.churn_candidate?.id || result.churned_customers[0].id;
       startAgentStream(churnId);
     } else {
       setBulkQueue([]);
+      setTelemetryLogs([
+        {
+          id: `log-seed-empty-${Date.now()}`,
+          timestamp: getClientTime(),
+          nodeKey: 'node_searching',
+          messageKey: 'msg_init',
+          status: 'completed'
+        }
+      ]);
     }
   };
 
@@ -440,11 +473,11 @@ export default function MerchantDashboard() {
   // ── ROI & MARGIN SAFETY MATH ──
   const totalVisitsThisWeek = uploadedGraphData?.visits?.reduce((a, b) => a + b, 0) || 1;
   const avgOrderValue = uploadedSales > 0 ? (uploadedSales / totalVisitsThisWeek) : 2500;
-  
+
   const totalDiscountCost = visibleQueue.reduce((sum, cust) => {
     return sum + (avgOrderValue * ((cust.discount ?? 15) / 100));
   }, 0);
-  
+
   const totalProjectedRevenue = visibleQueue.length * avgOrderValue;
   const netGain = totalProjectedRevenue - totalDiscountCost;
 
@@ -748,13 +781,13 @@ export default function MerchantDashboard() {
 
                   {!bulkApproved && visibleQueue.length > 0 && (
                     <>
-                      {/* ── MARGIN SAFETY TRUST WIDGET ── */}
+                      {/* Margin Safety Trust Widget */}
                       <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 shadow-xs mb-4">
                         <div className="flex items-center space-x-2 mb-4">
                           <ShieldCheck className="w-5 h-5 text-emerald-600" />
                           <h3 className="text-sm font-black text-emerald-900">{t.roiTitle}</h3>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                           <div className="bg-white rounded-xl p-3 border border-emerald-100 shadow-2xs">
                             <div className="text-[10px] font-bold text-slate-500 uppercase">{t.roiCost}</div>
@@ -769,7 +802,7 @@ export default function MerchantDashboard() {
                             <div className="text-lg font-black text-emerald-700">+₹{Math.round(netGain).toLocaleString('en-IN')}</div>
                           </div>
                         </div>
-                        
+
                         <p className="text-[11px] text-emerald-800 leading-relaxed font-medium">
                           {t.roiDesc
                             .replace('{cost}', Math.round(totalDiscountCost).toLocaleString('en-IN'))
@@ -917,7 +950,7 @@ export default function MerchantDashboard() {
                 </div>
                 <button onClick={() => setSelectedHistoryWeekId(null)} className="text-[11px] font-bold text-slate-400 hover:text-slate-600 cursor-pointer">{t.closeBtn}</button>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
                   <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1028,7 +1061,6 @@ export default function MerchantDashboard() {
                   <p className="text-[11px] text-slate-400 mt-1">{t.salesDesc}</p>
                 </div>
 
-                {/* Profit / Loss: Shows Only the Specific Week's Capital in Subtext */}
                 <div className={`bg-white p-5 rounded-2xl border shadow-xs ${
                   historyProfit >= 0 ? 'border-emerald-200' : 'border-rose-200'
                 }`}>

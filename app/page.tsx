@@ -88,8 +88,8 @@ export default function Page() {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#002970] leading-tight">
-            Turn Raw POS Ledgers Into <br />
-            <span className="text-[#00BAF2]">Automatic Footfall & Profit</span>
+            Your Business Runs <br />
+            <span className="text-[#00BAF2]">PayPulse Watches</span>
           </h1>
 
           <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">

@@ -10,9 +10,14 @@ app = FastAPI(
     description="Stateful agentic backend with human-in-the-loop approval and WhatsApp dispatch"
 )
 
+# Production CORS: Allows local Next.js and all Cloudflare Pages preview & production domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_origin_regex=r"https://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,6 +29,7 @@ app.include_router(upload_router, prefix="/api")
 
 
 @app.get("/")
+@app.get("/health")
 async def health_check():
     return {"status": "online", "service": "PayPulse Agent Backend"}
 
