@@ -29,7 +29,102 @@ interface AuditLedgerItem {
   time: string;
 }
 
-const TRANSLATIONS = {
+interface TranslationSchema {
+  title: string;
+  subtitle: string;
+  salesKpi: string;
+  salesDesc: string;
+  profitKpi: string;
+  lossKpi: string;
+  profitDesc: string;
+  lossDesc: string;
+  regularKpi: string;
+  regularDesc: string;
+  riskKpi: string;
+  riskDesc: string;
+  graph1: string;
+  graph2: string;
+  legendSales: string;
+  legendActive: string;
+  legendCurrent: string;
+  previousWeeks: string;
+  selectWeekPrompt: string;
+  historySectionTitle: string;
+  historySectionDesc: string;
+  noWeekSelected: string;
+  noWeeksRecorded: string;
+  monthlyOverviewBtn: string;
+  monthlyHeader: string;
+  closeView: string;
+  closeBtn: string;
+  totalMonthlySales: string;
+  totalMonthlyProfit: string;
+  totalCapital: string;
+  newShoppersAcquired: string;
+  monthlySalesTrend: string;
+  monthlyFootfallTrend: string;
+  totalLabel: string;
+  receiptsLabel: string;
+  visitsLabel: string;
+  newLabel: string;
+  regularsLabel: string;
+  customersLabel: string;
+  uploadTitle: string;
+  uploadSubtitle: string;
+  uploadBtn: string;
+  uploadSuccess: string;
+  uploadError: string;
+  uploadHint: string;
+  weeklyCapitalPlaceholder: string;
+  weeklyCapitalTitle: string;
+  uploadedBatchTitle: string;
+  uploadedBatchSubtitle: string;
+  logsTitle: string;
+  outreachTitle: string;
+  outreachSubtitle: string;
+  approveAllBtn: string;
+  approvingBtn: string;
+  outreachSuccess: string;
+  outreachSuccessDesc: string;
+  skipCustomer: string;
+  historyTitle: string;
+  historyDesc: string;
+  tableCol1: string;
+  tableCol2: string;
+  tableCol3: string;
+  tableCol4: string;
+  tableCol5: string;
+  emptyLogs: string;
+  emptyOutreach: string;
+  emptyHistory: string;
+  atRiskBadge: string;
+  justNow: string;
+  discountLabel: string;
+  offLabel: string;
+  statusApproved: string;
+  statusRejected: string;
+  statusPending: string;
+  daysAgo2: string;
+  spend1: string;
+  node_searching: string;
+  node_found: string;
+  node_planning: string;
+  node_waiting: string;
+  node_done: string;
+  msg_init: string;
+  msg_found: string;
+  msg_planning: string;
+  msg_waiting: string;
+  msg_approved: string;
+  msg_rejected: string;
+  roiTitle: string;
+  roiCost: string;
+  roiRecovery: string;
+  roiNet: string;
+  roiDesc: string;
+}
+
+const TRANSLATIONS: Record<'EN' | 'HI', TranslationSchema> = {
   EN: {
     title: "Customer Loyalty & Retention",
     subtitle: "Upload your weekly POS file and the AI will automatically find customers to bring back.",
@@ -126,7 +221,13 @@ const TRANSLATIONS = {
     msg_planning: "Calculated margin-safe personalized discount offer.",
     msg_waiting: "Outreach strategy verified. Pending merchant approval.",
     msg_approved: "Offer approved! Sent WhatsApp message to {name}.",
-    msg_rejected: "Offer skipped."
+    msg_rejected: "Offer skipped.",
+
+    roiTitle: "Margin Safety Check (Zero Loss Guarantee)",
+    roiCost: "Estimated Discount Cost",
+    roiRecovery: "Projected New Revenue",
+    roiNet: "Net Revenue Gain",
+    roiDesc: "Your weekly profit is ₹{profit}. The total cost of these discounts is safely capped at ₹{cost}. When these {count} customers return, they will generate ~₹{recovery} in new sales. You are mathematically guaranteed to stay in long-term profit."
   },
   HI: {
     title: "ग्राहक वफादारी और प्रतिधारण",
@@ -224,7 +325,13 @@ const TRANSLATIONS = {
     msg_planning: "व्यक्तिगत छूट ऑफ़र तैयार किया गया।",
     msg_waiting: "ऑफ़र अनुमोदन के लिए तैयार हैं।",
     msg_approved: "ऑफ़र स्वीकृत! {name} को WhatsApp संदेश भेजा गया।",
-    msg_rejected: "ऑफ़र छोड़ दिया गया।"
+    msg_rejected: "ऑफ़र छोड़ दिया गया।",
+
+    roiTitle: "मार्जिन सुरक्षा जांच (शून्य नुकसान की गारंटी)",
+    roiCost: "अनुमानित छूट लागत",
+    roiRecovery: "संभावित नया राजस्व",
+    roiNet: "शुद्ध राजस्व लाभ",
+    roiDesc: "आपका साप्ताहिक लाभ ₹{profit} है। इन छूटों की कुल लागत ₹{cost} पर सुरक्षित रूप से सीमित है। जब ये {count} ग्राहक वापस लौटेंगे, तो वे लगभग ₹{recovery} की नई बिक्री लाएंगे। लंबी अवधि में आपका लाभ गणितीय रूप से सुनिश्चित है।"
   }
 };
 
@@ -364,7 +471,6 @@ export default function MerchantDashboard() {
       setBulkApproved(false);
       setSkippedIds(new Set());
 
-      // Pre-seed instant Telemetry Logs so the dark blue feed comes alive immediately
       const initialLogs: TelemetryLog[] = [
         {
           id: `log-seed-1-${Date.now()}`,
