@@ -14,13 +14,12 @@ import {
   Send,
   Loader2
 } from "lucide-react";
-import { UploadResult, NewCustomer, sendBulkWelcomeMessages } from "../agentService";
+import { UploadResult, NewCustomer, sendBulkWelcomeMessages, API_BASE } from "../agentService";
 
 interface CsvUploadZoneProps {
   merchantId: number;
   lang: "EN" | "HI";
   t: Record<string, string>;
-  weeksCapital: string;
   onUploadComplete: (result: UploadResult) => void;
 }
 
@@ -30,7 +29,6 @@ export default function CsvUploadZone({
   merchantId,
   lang,
   t,
-  weeksCapital,
   onUploadComplete,
 }: CsvUploadZoneProps) {
   const [state, setState] = useState<UploadState>("idle");
@@ -92,12 +90,9 @@ export default function CsvUploadZone({
 
     const formData = new FormData();
     formData.append("file", file);
-    if (weeksCapital && !isNaN(parseFloat(weeksCapital))) {
-      formData.append("weekly_capital", weeksCapital);
-    }
 
     try {
-      const res = await fetch(`http://localhost:8000/api/upload/ledger/${merchantId}`, {
+      const res = await fetch(`${API_BASE}/api/upload/ledger/${merchantId}`, {
         method: "POST",
         body: formData,
       });

@@ -341,7 +341,6 @@ export default function MerchantDashboard() {
   const [lang, setLang] = useState<'EN' | 'HI'>('EN');
   const t = TRANSLATIONS[lang];
 
-  const [weeksCapital, setWeeksCapital] = useState<string>("");
   const [telemetryLogs, setTelemetryLogs] = useState<TelemetryLog[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLedgerItem[]>([]);
   const [hasUploadedThisSession, setHasUploadedThisSession] = useState(false);
@@ -569,7 +568,6 @@ export default function MerchantDashboard() {
   // ── UPLOADED WEEK METRICS ──
   const uploadedSales = uploadedKpis?.total_sales ?? 0;
   const uploadedProfit = uploadedKpis?.profit ?? 0;
-  const uploadedCapital = uploadedKpis?.weekly_capital ?? 0;
   const uploadedRegular = uploadedKpis?.regular_customers ?? 0;
   const uploadedNew = uploadedKpis?.new_customers ?? 0;
   const uploadedRisk = uploadedKpis?.at_risk_customers ?? 0;
@@ -601,7 +599,6 @@ export default function MerchantDashboard() {
 
   const mSales = weeksBreakdown.reduce((sum, w) => sum + w.kpis.total_sales, 0);
   const mProfit = weeksBreakdown.reduce((sum, w) => sum + w.kpis.profit, 0);
-  const mCapital = weeksBreakdown.reduce((sum, w) => sum + w.kpis.weekly_capital, 0);
   const mNew = weeksBreakdown.reduce((sum, w) => sum + (w.kpis.new_customers || 0), 0);
   const monthlyLabels = weeksBreakdown.map(w => w.short_label);
   const monthlySalesData = weeksBreakdown.map(w => w.kpis.total_sales);
@@ -621,18 +618,6 @@ export default function MerchantDashboard() {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <div className="relative flex items-center">
-            <span className="absolute left-3 text-xs font-bold text-slate-400">₹</span>
-            <input
-              type="number"
-              value={weeksCapital}
-              onChange={(e) => setWeeksCapital(e.target.value)}
-              placeholder={t.weeklyCapitalPlaceholder}
-              title={t.weeklyCapitalTitle}
-              className="w-32 sm:w-36 pl-7 pr-3 py-1.5 text-xs font-bold bg-white/90 border border-slate-200 rounded-xl text-[#002970] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00BAF2] shadow-xs"
-            />
-          </div>
-
           <button
             onClick={() => setLang(lang === 'EN' ? 'HI' : 'EN')}
             className="p-2 text-[#002970] bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 shadow-sm cursor-pointer transition-colors shrink-0"
@@ -654,7 +639,6 @@ export default function MerchantDashboard() {
           merchantId={1}
           lang={lang}
           t={t}
-          weeksCapital={weeksCapital}
           onUploadComplete={handleUploadComplete}
         />
 
@@ -701,7 +685,7 @@ export default function MerchantDashboard() {
                     : `-₹${Math.round(Math.abs(uploadedProfit)).toLocaleString('en-IN')}`}
                 </div>
                 <p className={`text-[11px] mt-1 ${uploadedProfit >= 0 ? 'text-slate-500' : 'text-rose-500'}`}>
-                  {t.weeklyCapitalPlaceholder}: ₹{Math.round(uploadedCapital).toLocaleString('en-IN')}
+                  {uploadedProfit >= 0 ? t.profitDesc : t.lossDesc}
                 </p>
               </div>
 
@@ -1076,17 +1060,7 @@ export default function MerchantDashboard() {
                   <div className="mt-2 text-2xl sm:text-3xl font-black text-emerald-700">
                     ₹{Math.round(mProfit).toLocaleString('en-IN')}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">{t.totalMonthlySales} - {t.totalCapital}</p>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-                  <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    <span>{t.totalCapital}</span>
-                    <Database className="w-4 h-4 text-indigo-500" />
-                  </div>
-                  <div className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">
-                    ₹{Math.round(mCapital).toLocaleString('en-IN')}
-                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">{t.profitDesc}</p>
                 </div>
 
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -1185,8 +1159,8 @@ export default function MerchantDashboard() {
                       ? `₹${Math.round(historyProfit).toLocaleString('en-IN')}`
                       : `-₹${Math.round(Math.abs(historyProfit)).toLocaleString('en-IN')}`}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    {t.weeklyCapitalPlaceholder}: ₹{Math.round(selectedHistoryWeek.kpis.weekly_capital).toLocaleString('en-IN')}
+                  <p className={`text-[11px] mt-1 ${historyProfit >= 0 ? 'text-slate-400' : 'text-rose-500'}`}>
+                    {historyProfit >= 0 ? t.profitDesc : t.lossDesc}
                   </p>
                 </div>
 
