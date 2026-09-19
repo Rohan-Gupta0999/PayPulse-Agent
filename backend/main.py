@@ -34,6 +34,32 @@ async def health_check():
     return {"status": "online", "service": "PayPulse Agent Backend"}
 
 
+@app.get("/api/debug-db")
+async def debug_db():
+    from app.database.session import DATABASE_URL, AsyncSessionLocal
+    from sqlalchemy import text
+    import urllib.parse
+    
+    parsed = urllib.parse.urlparse(DATABASE_URL) if DATABASE_URL else None
+    masked_host = f"{parsed.hostname}:{parsed.port}/{parsed.path.lstrip('/')}" if parsed else "NONE"
+    user = parsed.username if parsed else "NONE"
+    
+    status = {"db_host": masked_host, "db_user": user}
+    try:
+        async with AsyncSessionLocal() as session:
+            res = await session.execute(text("SELECT count(*) FROM weekly_snapshots;"))
+            status["weekly_snapshots_count"] = res.scalar()
+            res2 = await session.execute(text("SELECT count(*) FROM customers;"))
+            status["customers_count"] = res2.scalar()
+            status["success"] = True
+    except Exception as e:
+        import traceback
+        status["success"] = False
+        status["error"] = str(e)
+        status["traceback"] = traceback.format_exc()
+    return status
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, loop="asyncio")
